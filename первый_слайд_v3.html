@@ -23,7 +23,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var
 #hdr .sub b{color:var(--cyan);font-weight:700}
 
 #stack{position:fixed;left:26px;top:50%;transform:translateY(-50%);z-index:10;display:flex;flex-direction:column;
-  gap:10px;width:346px;padding-left:26px}
+  gap:7px;width:352px;padding-left:26px}
 /* линия процесса: связывает все контуры и шаги в одну цепочку */
 #navline{position:absolute;left:12px;top:20px;bottom:20px;width:2px;background:rgba(140,170,210,.22);border-radius:2px}
 #navline::after{content:'';position:absolute;left:-4px;bottom:-10px;
@@ -50,12 +50,17 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var
 .lay.hot .n{color:var(--lc)}
 .lay .tag{display:inline-block;font-family:var(--mono);font-size:8.5px;letter-spacing:.12em;color:var(--dim);
   border:1px solid var(--line);padding:1px 5px;margin-top:4px;text-transform:uppercase}
-/* шаги пласта — узлы на той же линии, визуально легче контуров */
-.lay.step{padding:9px 14px;background:rgba(10,18,32,.6);border-left-width:2px}
-.lay.step::before{width:8px;height:8px;margin-top:-4px;left:-17px}   /* центр совпадает с линией: -17 + 4 = -13 */
-.lay.step .n{font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--lc)}
-.lay.step .t{font-size:13px;font-weight:600;margin-top:2px;color:var(--txt)}
-.lay.step.hot{background:rgba(240,174,74,.10)}
+/* шаги — вложенные узлы той же цепочки: сдвинуты вправо и связаны с линией отводом */
+.lay.step{margin-left:18px;width:calc(100% - 18px);padding:7px 12px;
+  background:rgba(10,18,32,.5);border-left-width:2px}
+.lay.step::before{width:8px;height:8px;margin-top:-4px;left:-35px}   /* −35 + 4 + 18 = −13 → центр на линии */
+.lay.step::after{content:'';position:absolute;left:-27px;top:50%;width:27px;height:1px;
+  background:var(--line);opacity:.7}
+.lay.step .t{font-size:12px;font-weight:600;color:var(--txt);line-height:1.35}
+.lay.step .sn{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--lc);margin-right:7px}
+.lay.step.hot{background:rgba(255,255,255,.07)}
+.lay.step.hot::after{background:var(--lc);opacity:1}
 
 #panel{position:fixed;right:26px;top:50%;transform:translateY(-50%) translateX(30px);z-index:10;
   width:29vw;min-width:330px;max-width:520px;
@@ -127,7 +132,15 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var
 #loader .t{font-family:var(--serif);font-size:20px}
 #loader .m{font-family:var(--mono);font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--dim)}
 
-@media (max-width:1280px){ #stack{width:260px} .lay .t{font-size:14px} #panel{width:32vw;min-width:300px} }
+@media (max-width:1280px){ #stack{width:290px} .lay .t{font-size:14px} #panel{width:32vw;min-width:300px} }
+/* невысокий экран: цепочка из 10 узлов должна помещаться целиком */
+@media (max-height:760px){
+  #stack{gap:5px}
+  .lay{padding:10px 14px}
+  .lay .t{font-size:14px}
+  .lay.step{padding:5px 11px}
+  .lay.step .t{font-size:11.5px}
+}
 </style>
 </head>
 <body>
@@ -189,7 +202,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 const ZONES = {
   grr: {
     // скрыт по решению от 11.08; при возврате перенумеровать: грр 01, пласт 02, скв 03, наземка 04
-    no:'—', name:'ЦД ресурсной базы', short:'ГРР · ресурсная база', color:'#9B7BE8',
+    no:'—', name:'Цифровой двойник ресурсной базы', short:'ГРР · ресурсная база', color:'#9B7BE8',
     claim:'Цифровая геологическая модель: восполняемость и конверсия запасов. Сейсморазведка, интерпретация и геологическое моделирование в едином контуре.',
     fx:[{v:'−15%', l:'полный цикл ГРР'}],
     blocks:[
@@ -199,26 +212,26 @@ const ZONES = {
     note:'Контур 2027 года — вне периметра пилота Молдабек Восточный. Показывается как целевой образ.'
   },
   plast: {
-    no:'01', name:'ЦД пласта', short:'Пласт', color:'#F0AE4A',
+    no:'01', name:'Цифровой двойник пласта', short:'Пласт', color:'#F0AE4A',
     claim:'Постоянно действующая гидродинамическая модель и приоритизация мероприятий по экономике: планирование не от пробуренных скважин, а от ограничений пласта и геологии.',
     fx:[{v:'−5%', l:'снижение CAPEX'}],
     blocks:[],   // шаги вынесены в список слева — здесь не дублируем
     mods:['ABAI Картопостроитель','ABAI ЦРНС 2.0','ABAI Управление заводнением 2.0','ABAI ПиАГТМ','ГГДМ (КМГИ)'],
     note:'На пилоте: выделена перспективная область истощённого 5-го Юрского объекта, намечено бурение 1–2 горизонтальных скважин.',
     subs:[
-      { n:'Шаг 1', t:'Построение и актуализация ГГДМ', shortT:'ГГДМ', color:'#F0AE4A',
+      { n:'Шаг 1', t:'Построение и актуализация геолого-гидродинамической модели', shortT:'ГГДМ',
         what:'Постоянно действующая цифровая модель пласта: структура, свойства коллектора, характеристики вытеснения и Кпрод по каждой скважине.',
         mods:['ABAI Картопостроитель','ГГДМ (КМГИ)'] },
-      { n:'Шаг 2', t:'Подготовка стратегии разработки месторождения', shortT:'Стратегия разработки', color:'#F0664A',
+      { n:'Шаг 2', t:'Подготовка стратегии разработки месторождения', shortT:'Стратегия разработки',
         what:'Выбор системы разработки, оптимизация заводнения и подбор мероприятий ГТМ на модели.',
         mods:['ABAI Управление заводнением 2.0','ABAI ПиАГТМ','ABAI ЦРНС 2.0'] },
-      { n:'Шаг 3', t:'Проведение технико-экономической оценки', shortT:'Технико-экономическая оценка', color:'#E8D44A',
+      { n:'Шаг 3', t:'Проведение технико-экономической оценки', shortT:'Технико-экономическая оценка',
         what:'Расчёт экономики вариантов разработки: CAPEX и OPEX мероприятий, ранжирование точек бурения по отдаче.',
         mods:['ABAI ЦРНС 2.0'] }
     ]
   },
   skv: {
-    no:'02', name:'ЦД скважины', short:'Скважина', color:'#8FBAF0',
+    no:'02', name:'Цифровой двойник скважины', short:'Скважина', color:'#8FBAF0',
     claim:'Сквозной двойник от начала бурения до вывода на режим и последующих ремонтов: контроль параметров в реальном времени, предотвращение аварий, единая среда ТКРС.',
     fx:[{v:'−3%', l:'сроки вывода на режим'}],
     blocks:[
@@ -226,10 +239,18 @@ const ZONES = {
       {t:'Планирование и контроль ТКРС', i:'График ремонтов · выявление пересечений движения бригад · суточная отчётность · датчики СТПА'}
     ],
     mods:['ABAI Цифровое бурение','ABAI Цифровой мониторинг ТКРС'],
-    note:'Появляются инструменты для оценки перехода от бурения «под ключ» к раздельному сервису — новая возможная бизнес-модель.'
+    note:'Появляются инструменты для оценки перехода от бурения «под ключ» к раздельному сервису — новая возможная бизнес-модель.',
+    subs:[
+      { n:'Шаг 1', t:'Мониторинг бурения и сводки', shortT:'Мониторинг бурения',
+        what:'Контроль параметров, режимов и отклонений в реальном времени: оперативная корректировка траектории, предотвращение аварий, полная цифровизация суточных сводок.',
+        mods:['ABAI Цифровое бурение'] },
+      { n:'Шаг 2', t:'Планирование и контроль ремонтов скважин', shortT:'ТКРС',
+        what:'График ремонтов и его исполнение в единой среде: выявление пересечений движения бригад, документооборот по ремонту, данные датчиков СТПА.',
+        mods:['ABAI Цифровой мониторинг ТКРС'] }
+    ]
   },
   naz: {
-    no:'03', name:'ЦД добычи и наземной инфраструктуры', short:'Наземная инфраструктура', color:'#35D0C2',
+    no:'03', name:'Цифровой двойник добычи и наземной инфраструктуры', short:'Наземная инфраструктура', color:'#35D0C2',
     claim:'Контроль добычи в реальном времени по действующему фонду: модель работает с данными «с поля», реагирует на изменение дебита, обводнённости и давления, предупреждает об отклонениях.',
     fx:[
       {v:'−5%', l:'управляемые потери добычи'},
@@ -242,6 +263,14 @@ const ZONES = {
       {t:'Гидравлика · энергетика · подготовка', i:'Загрузка системы сбора и ППД · расчёт электрических сетей · мнемосхема подготовки'}
     ],
     mods:['ABAI ТР','ABAI ПГНО','ABAI Планирование добычи и мониторинг 2.0','ABAI Наземная инфраструктура','Интеллектуальное месторождение'],
+    subs:[
+      { n:'Шаг 1', t:'Насосные станции и наземная инфраструктура', shortT:'КНС и инфраструктура',
+        what:'Гидравлика системы сбора и ППД, загрузка сети, оценка износа насосов КНС и расчёт электрических сетей.',
+        mods:['ABAI Наземная инфраструктура'] },
+      { n:'Шаг 2', t:'Мониторинг добычи', shortT:'Мониторинг добычи',
+        what:'Контроль добычи в реальном времени: реакция на изменение дебита, обводнённости и давления, выявление отклонений режима и предиктивный анализ отказов трубопроводов.',
+        mods:['ABAI Планирование добычи и мониторинг 2.0','ABAI ТР'] }
+    ],
     note:'Любое изменение на одном шаге цепочки «пласт — скважина — труба» автоматически пересчитывает все остальные шаги.'
   }
 };
@@ -432,7 +461,7 @@ async function build(){
       const subIds = ['plast1','plast2','plast3'];
       const h3 = (yt-yb)/3;
       for(let si=0; si<3; si++){
-        const col = ZONES.plast.subs[si].color;
+        const col = ZONES.plast.subs[si].color || ZONES.plast.color;
         const Ms = meta[subIds[si]];
         // составляющие идут снизу вверх: 01.1 — нижняя полоса, 01.3 — верхняя
         const sb = yb + h3*si, st = sb + h3;
@@ -573,14 +602,10 @@ addEventListener('keydown', e => { if(e.key === 'Escape'){ state.locked = null; 
 const elStack = document.getElementById('stack');
 /* Список слева. При выборе ЦД пласта он раскрывается в шаги, остальные контуры
    уходят — чтобы на экране был один смысловой уровень, а не два сразу. */
-let stackKey = null;
+let stackBuilt = false;
 function buildStack(){
-  const open = state.locked === 'plast';
-  const key = open ? 'plast' : 'all';
-  if(key === stackKey) return;
-  stackKey = key;
-  // линию не пересоздаём — она общая для всей цепочки
-  [...elStack.querySelectorAll('.lay')].forEach(b => b.remove());
+  if(stackBuilt) return;      // список статичен: все шаги видны сразу
+  stackBuilt = true;
   for(const id of ORDER){
     const zd = ZONES[id];
     const b = document.createElement('button');
@@ -596,18 +621,21 @@ function buildStack(){
     });
     elStack.appendChild(b);
 
-    if(open && id === 'plast' && zd.subs){
-      zd.subs.forEach((s, si) => {
-        const sb = document.createElement('button');
-        sb.className = 'lay step'; sb.id = 'lay-step-'+si;
-        sb.style.setProperty('--lc', s.color);
-        sb.innerHTML = `<div class="n">${s.n}</div><div class="t">${s.t}</div>`;
-        sb.addEventListener('mouseenter', () => { state.hover = 'plast'; state.hoverSub = si; refresh(); });
-        sb.addEventListener('mouseleave', () => { state.hoverSub = null; refresh(); });
-        sb.addEventListener('click', () => { panelState.sub = (panelState.sub === si) ? null : si; refresh(); });
-        elStack.appendChild(sb);
+    // шаги контура — вложенные узлы той же цепочки, в цвете своего контура
+    (zd.subs || []).forEach((s, si) => {
+      const sb = document.createElement('button');
+      sb.className = 'lay step'; sb.id = `lay-step-${id}-${si}`;
+      sb.style.setProperty('--lc', s.color || zd.color);
+      sb.innerHTML = `<div class="t"><span class="sn">${s.n}</span>${s.t}</div>`;
+      sb.addEventListener('mouseenter', () => { state.hover = id; state.hoverSub = si; refresh(); });
+      sb.addEventListener('mouseleave', () => { state.hoverSub = null; refresh(); });
+      sb.addEventListener('click', () => {
+        state.locked = id;
+        panelState.sub = (panelState.zone === id && panelState.sub === si) ? null : si;
+        refresh();
       });
-    }
+      elStack.appendChild(sb);
+    });
   }
 }
 buildStack();
@@ -624,10 +652,11 @@ function showPanel(id){
   if(zd.subs && panelState.sub !== null){
     // выбран шаг: его название — заголовок, контур остаётся подзаголовком
     const s = zd.subs[panelState.sub];
-    $('panel').style.setProperty('--pc', s.color);
+    const sc = s.color || zd.color;
+    $('panel').style.setProperty('--pc', sc);
     $('p-kick').textContent = s.n;
     $('p-name').textContent = s.t;
-    $('p-claim').innerHTML = `<span style="color:${s.color}">${zd.name}</span> — ${zd.claim}`;
+    $('p-claim').innerHTML = `<span style="color:${sc}">${zd.name}</span> — ${zd.claim}`;
     $('p-h-blocks').textContent = 'Что это';
     $('p-blocks').innerHTML = `<div class="bl"><div class="bi">${s.what}</div></div>`;
     $('p-mods').innerHTML = s.mods.map(m => `<span class="mod">${m}</span>`).join('');
@@ -667,11 +696,12 @@ function refresh(){
   const a = active();
   for(const id in zones) zones[id].target = (id === a) ? 1 : 0;
   buildStack();
-  for(const id of ORDER){ const b = $('lay-'+id); if(b) b.classList.toggle('hot', id === a); }
-  if(state.locked === 'plast'){
-    const cur = panelState.sub !== null ? panelState.sub : state.hoverSub;
-    ZONES.plast.subs.forEach((_, si) => {
-      const b = $('lay-step-'+si); if(b) b.classList.toggle('hot', si === cur);
+  for(const id of ORDER){
+    const b = $('lay-'+id); if(b) b.classList.toggle('hot', id === a);
+    const cur = state.locked === id ? panelState.sub : (state.hover === id ? state.hoverSub : null);
+    (ZONES[id].subs || []).forEach((_, si) => {
+      const sb = $(`lay-step-${id}-${si}`);
+      if(sb) sb.classList.toggle('hot', a === id && cur === si);
     });
   }
   if(a) showPanel(a); else showIntro();
@@ -754,7 +784,7 @@ function animate(){
     chip.style.top = (mouseXY[1]+14)+'px';
     if(hitZone === 'plast' && hitSub !== null){
       const s = ZONES.plast.subs[hitSub];
-      chip.style.setProperty('--cc', s.color);
+      chip.style.setProperty('--cc', s.color || ZONES.plast.color);
       chip.textContent = s.n + ' · ' + s.shortT;
     } else {
       chip.style.setProperty('--cc', ZONES[hitZone].color);
