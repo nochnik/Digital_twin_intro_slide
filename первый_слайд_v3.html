@@ -105,8 +105,17 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var
 .rsep::after{content:'';position:absolute;right:0;top:-2.5px;border-left:5px solid var(--line);
   border-top:3px solid transparent;border-bottom:3px solid transparent}
 
-#hint{position:fixed;bottom:24px;left:26px;z-index:10;font-family:var(--mono);font-size:9.5px;
+#hint{position:fixed;bottom:62px;left:26px;z-index:10;font-family:var(--mono);font-size:9.5px;
   letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+
+/* переход ко второй части показа — неприметный, в том же окне */
+#next{position:fixed;left:26px;bottom:22px;z-index:12;display:inline-flex;align-items:center;gap:8px;
+  font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--dim);text-decoration:none;border:1px solid var(--line);padding:8px 13px;
+  background:rgba(10,18,32,.45);backdrop-filter:blur(6px);opacity:.42;
+  transition:opacity .25s,color .25s,border-color .25s,background .25s}
+#next:hover,#next:focus-visible{opacity:1;color:var(--cyan);border-color:var(--cyan);background:rgba(79,227,255,.08)}
+#next .arw{font-size:12px;line-height:1}
 
 #chip{position:fixed;z-index:20;pointer-events:none;font-family:var(--mono);font-size:10.5px;
   letter-spacing:.14em;text-transform:uppercase;color:#EAF2FF;background:rgba(8,14,26,.9);
@@ -159,6 +168,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var
 </div>
 
 <div id="hint">Вращение — мышь · наведите на слой модели или список слева</div>
+<a id="next" href="https://znewk.github.io/kmg-digital-twin-presentation/">2 часть<span class="arw">→</span></a>
 <div id="chip"></div>
 
 <script type="importmap">
