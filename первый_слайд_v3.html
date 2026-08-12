@@ -22,47 +22,47 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var
 #hdr .sub{font-family:var(--mono);font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--dim);margin-top:6px}
 #hdr .sub b{color:var(--cyan);font-weight:700}
 
-#stack{position:fixed;left:26px;top:50%;transform:translateY(-50%);z-index:10;display:flex;flex-direction:column;gap:8px;width:250px}
+#stack{position:fixed;left:26px;top:50%;transform:translateY(-50%);z-index:10;display:flex;flex-direction:column;gap:10px;width:320px}
 .lay{cursor:pointer;text-align:left;background:var(--glass);border:1px solid var(--line);
-  border-left:3px solid var(--lc);padding:10px 12px;color:var(--txt);font-family:var(--ui);
+  border-left:4px solid var(--lc);padding:14px 17px;color:var(--txt);font-family:var(--ui);
   transition:background .2s,border-color .2s,transform .2s;backdrop-filter:blur(8px)}
-.lay .n{font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;color:var(--dim)}
-.lay .t{font-size:13.5px;font-weight:600;margin-top:2px}
+.lay .n{font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;color:var(--dim)}
+.lay .t{font-size:16px;font-weight:600;margin-top:4px;line-height:1.25}
 .lay:hover,.lay.hot{background:rgba(79,227,255,.08);border-color:var(--lc);transform:translateX(4px)}
 .lay.hot .n{color:var(--lc)}
 .lay .tag{display:inline-block;font-family:var(--mono);font-size:8.5px;letter-spacing:.12em;color:var(--dim);
   border:1px solid var(--line);padding:1px 5px;margin-top:4px;text-transform:uppercase}
 
 #panel{position:fixed;right:26px;top:50%;transform:translateY(-50%) translateX(30px);z-index:10;
-  width:40vw;min-width:380px;max-width:760px;
+  width:29vw;min-width:330px;max-width:520px;
   max-height:86vh;overflow-y:auto;background:var(--glass);border:1px solid var(--line);
-  border-top:2px solid var(--pc,#4FE3FF);backdrop-filter:blur(12px);padding:26px 30px;
+  border-top:2px solid var(--pc,#4FE3FF);backdrop-filter:blur(12px);padding:20px 22px;
   opacity:0;pointer-events:none;transition:opacity .3s,transform .3s}
 #panel.vis{opacity:1;pointer-events:auto;transform:translateY(-50%) translateX(0)}
 #panel::-webkit-scrollbar{width:5px}
 #panel::-webkit-scrollbar-thumb{background:rgba(140,170,210,.3)}
-#p-kick{font-family:var(--mono);font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--pc,#4FE3FF)}
-#p-name{font-family:var(--serif);font-size:28px;font-weight:600;margin-top:6px;line-height:1.2}
-#p-claim{font-size:15.5px;color:var(--dim);margin-top:10px;line-height:1.55}
-.p-h{font-family:var(--mono);font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);
-  margin:18px 0 9px;border-bottom:1px solid var(--line);padding-bottom:6px}
-#p-fx{display:flex;flex-wrap:wrap;gap:8px}
-.fx{border:1px solid var(--pc,#4FE3FF);padding:8px 14px;min-width:104px}
-.fx .v{font-family:var(--mono);font-size:24px;font-weight:700;color:var(--pc,#4FE3FF)}
-.fx .l{font-size:11.5px;color:var(--dim);margin-top:3px;line-height:1.3}
-#p-blocks .bl{margin-bottom:11px}
-#p-blocks .bt{font-size:14.5px;font-weight:600}
-#p-blocks .bi{font-size:13px;color:var(--dim);line-height:1.55}
+#p-kick{font-family:var(--mono);font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--pc,#4FE3FF)}
+#p-name{font-family:var(--serif);font-size:23px;font-weight:600;margin-top:5px;line-height:1.2}
+#p-claim{font-size:13.5px;color:var(--dim);margin-top:8px;line-height:1.5}
+.p-h{font-family:var(--mono);font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);
+  margin:14px 0 8px;border-bottom:1px solid var(--line);padding-bottom:5px}
+#p-fx{display:flex;flex-wrap:wrap;gap:6px}
+.fx{border:1px solid var(--pc,#4FE3FF);padding:7px 11px;min-width:88px}
+.fx .v{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--pc,#4FE3FF)}
+.fx .l{font-size:10.5px;color:var(--dim);margin-top:2px;line-height:1.3}
+#p-blocks .bl{margin-bottom:9px}
+#p-blocks .bt{font-size:13px;font-weight:600}
+#p-blocks .bi{font-size:12px;color:var(--dim);line-height:1.5}
 #p-mods{display:flex;flex-wrap:wrap;gap:6px}
 .mod{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
   border:1px solid var(--line);color:var(--txt);padding:4px 10px}
 #p-note{font-size:12.5px;color:var(--dim);margin-top:16px;line-height:1.55;border-left:2px solid var(--pc,#4FE3FF);padding-left:11px}
 .sub{cursor:pointer;border:1px solid var(--line);border-left:3px solid var(--pc,#F0AE4A);
-  padding:12px 14px;margin-bottom:9px;transition:background .2s,transform .2s}
+  padding:10px 12px;margin-bottom:8px;transition:background .2s,transform .2s}
 .sub:hover{background:rgba(240,174,74,.08);transform:translateX(3px)}
-.sub .sn{font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--pc,#F0AE4A)}
-.sub .st{font-size:15px;font-weight:600;margin-top:3px}
-.sub .sd{font-size:12px;color:var(--dim);margin-top:4px;line-height:1.5}
+.sub .sn{font-family:var(--mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--pc,#F0AE4A)}
+.sub .st{font-size:13.5px;font-weight:600;margin-top:3px}
+.sub .sd{font-size:11.5px;color:var(--dim);margin-top:4px;line-height:1.45}
 .sub .more{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--pc,#F0AE4A);margin-top:6px;text-transform:uppercase}
 #p-back{cursor:pointer;background:none;border:1px solid var(--line);color:var(--dim);
   font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;padding:6px 10px;margin-bottom:12px}
@@ -93,7 +93,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var
 #loader .t{font-family:var(--serif);font-size:20px}
 #loader .m{font-family:var(--mono);font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--dim)}
 
-@media (max-width:1100px){ #stack{width:200px} #panel{width:340px} }
+@media (max-width:1280px){ #stack{width:260px} .lay .t{font-size:14px} #panel{width:32vw;min-width:300px} }
 </style>
 </head>
 <body>
@@ -126,9 +126,9 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var
 <div id="road">
   <div class="rd"><div class="y">окт 2026</div><div class="d">промышленная эксплуатация пилота</div></div>
   <div class="rsep"></div>
-  <div class="rd"><div class="y">2027</div><div class="d">ТОП-12 месторождений КМГ</div></div>
+  <div class="rd"><div class="y">2028</div><div class="d">ТОП-12 месторождений КМГ</div></div>
   <div class="rsep"></div>
-  <div class="rd"><div class="y">2028</div><div class="d">100% добывающих активов</div></div>
+  <div class="rd"><div class="y">далее</div><div class="d">100% добывающих активов</div></div>
 </div>
 
 <div id="hint">Вращение — мышь · наведите на слой модели или список слева</div>
@@ -227,7 +227,7 @@ const RANK_UP = ['plast','skv','naz'];           // порядок слоёв с
    ================================================================ */
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(36, innerWidth/innerHeight, 1, 4000);
-camera.position.set(340, 250, 340);
+camera.position.set(385, 278, 385);   // с запасом, чтобы куб влезал в коридор между панелями
 const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
 renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio, 1.6));
@@ -624,8 +624,10 @@ function refresh(){
   for(const id of ORDER) $('lay-'+id).classList.toggle('hot', id === a);
   if(a) showPanel(a); else showIntro();
   controls.autoRotateSpeed = a ? 0.55 : 1.7;
+  fitBetweenPanels();
 }
 showIntro();
+fitBetweenPanels();
 
 /* ================================================================
    ЦИКЛ
@@ -775,10 +777,22 @@ function animate(){
 }
 animate();
 
-addEventListener('resize', () => {
-  camera.aspect = innerWidth/innerHeight;
+/* Модель центрируется в свободном коридоре между панелями: сдвигаем не сцену,
+   а окно проекции — орбита и клики остаются на своих местах. */
+function fitBetweenPanels(){
+  const W = innerWidth, H = innerHeight;
+  const left  = document.getElementById('stack').getBoundingClientRect().right + 24;
+  const panel = document.getElementById('panel');
+  const right = panel.classList.contains('vis') ? panel.getBoundingClientRect().left - 24 : W;
+  const shift = (left + right)/2 - W/2;          // куда уехал центр коридора
+  camera.setViewOffset(W, H, -shift, 0, W, H);
+  camera.aspect = W/H;
   camera.updateProjectionMatrix();
+}
+
+addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight);
+  fitBetweenPanels();
 });
 
 window.__dbg = { renderer, scene, camera, state, zones, refresh, world, get pickCount(){ return pickMeshes.length; } };
