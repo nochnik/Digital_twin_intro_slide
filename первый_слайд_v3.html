@@ -408,7 +408,8 @@ async function build(){
       for(let si=0; si<3; si++){
         const col = ZONES.plast.subs[si].color;
         const Ms = meta[subIds[si]];
-        const st = yt - h3*si, sb = st - h3;
+        // составляющие идут снизу вверх: 01.1 — нижняя полоса, 01.3 — верхняя
+        const sb = yb + h3*si, st = sb + h3;
         const cS = Ms.box.getCenter(new THREE.Vector3());
         const sX = FOOT/Ms.size.x, sZ = DEPTH/Ms.size.z, sY = (h3-3)/Ms.size.y;
         const wrap = new THREE.Group();
@@ -565,7 +566,8 @@ function showPanel(id){
   if(zd.subs && panelState.sub === null){
     // пласт: три составляющие — карточки-модалки, каждая в своём цвете
     $('p-h-blocks').textContent = 'Составляющие · нажмите для деталей';
-    $('p-blocks').innerHTML = zd.subs.map((s,i) =>
+    // порядок карточек повторяет стек на экране: сверху 01.3, снизу 01.1
+    $('p-blocks').innerHTML = zd.subs.map((s,i) => ({s,i})).reverse().map(({s,i}) =>
       `<div class="sub" data-i="${i}" style="--pc:${s.color}"><div class="sn">${s.n} · составляющая</div><div class="st">${s.t}</div><div class="sd">${s.what}</div><div class="more">Подробнее →</div></div>`).join('');
     $('p-blocks').querySelectorAll('.sub').forEach(el =>
       el.addEventListener('click', () => { panelState.sub = +el.dataset.i; showPanel(id); }));
@@ -729,10 +731,10 @@ function animate(){
         // она встаёт в центр слоя, соседние разъезжаются заметно дальше
         let tOff = 0;
         if(plastActive){
-          const base = (si === 0 ? 8 : si === 2 ? -8 : 0);   // si: 0 — верхняя, 2 — нижняя
+          const base = (si === 0 ? -8 : si === 2 ? 8 : 0);   // si: 0 — нижняя, 2 — верхняя
           if(aSub === null) tOff = base;
           else if(si === aSub) tOff = base;                  // выбранная остаётся на месте
-          else tOff = base + (si < aSub ? 1 : -1) * 34 * Math.abs(si - aSub);   // соседние уезжают
+          else tOff = base + (si < aSub ? -1 : 1) * 34 * Math.abs(si - aSub);   // соседние уезжают
         }
         s.off += (tOff - s.off)*k;
         // выбранная составляющая ещё и крупнее соседних; масштабируем вокруг её центра,
