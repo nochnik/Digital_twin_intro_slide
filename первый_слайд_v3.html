@@ -635,6 +635,20 @@ fitBetweenPanels();
 /* ================================================================
    ЦИКЛ
    ================================================================ */
+/* На сколько разлетевшиеся составляющие выходят за габарит своего слоя.
+   Берём фактические значения прошлого кадра — стек и полосы едут синхронно. */
+function subSpread(id){
+  const z = zones[id];
+  if(!z || !z.subs3d) return { up:0, down:0 };
+  let top = -Infinity, bot = Infinity;
+  for(const s of z.subs3d){
+    const cy = (s.st + s.sb)/2, hh = (s.st - s.sb)/2 * (s.scl || 1);
+    top = Math.max(top, cy + hh + s.off);
+    bot = Math.min(bot, cy - hh + s.off);
+  }
+  return { up: Math.max(0, (top - z.yt) * 1.06), down: Math.max(0, (z.yb - bot) * 1.06) };
+}
+
 const clock = new THREE.Clock();
 function animate(){
   requestAnimationFrame(animate);
@@ -683,14 +697,17 @@ function animate(){
     const anchor = locked ? VIEW_Y : cA;
     offsets[act] = anchor - cA;
     const ai = RANK_UP.indexOf(act);
-    let topEdge = anchor + (za.yt - za.yb)/2 * 1.06;
+    // разлетевшиеся составляющие пласта выходят за габарит слоя — соседние контуры
+    // должны отступить на эту же величину, иначе верхняя полоса въедет в ЦД скважины
+    const spread = subSpread(act);
+    let topEdge = anchor + (za.yt - za.yb)/2 * 1.06 + spread.up;
     for(let i = ai+1; i < RANK_UP.length; i++){
       const z = zones[RANK_UP[i]], h = z.yt - z.yb;
       const c = topEdge + GAP + h/2;
       offsets[RANK_UP[i]] = c - (z.yb + z.yt)/2;
       topEdge = c + h/2;
     }
-    let botEdge = anchor - (za.yt - za.yb)/2 * 1.06;
+    let botEdge = anchor - (za.yt - za.yb)/2 * 1.06 - spread.down;
     for(let i = ai-1; i >= 0; i--){
       const z = zones[RANK_UP[i]], h = z.yt - z.yb;
       const c = botEdge - GAP - h/2;
