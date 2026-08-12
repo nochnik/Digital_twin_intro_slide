@@ -71,7 +71,8 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var
   font-size:18px;cursor:pointer;line-height:1}
 #p-close:hover{color:var(--txt)}
 
-#road{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:10;display:flex;align-items:center;gap:0;
+/* дорожная карта скрыта по решению от 12.08 — вернуть: display:flex вместо none */
+#road{display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:10;align-items:center;gap:0;
   background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(8px);padding:10px 22px}
 .rd{text-align:center;padding:0 18px}
 .rd .y{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--cyan)}
