@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>glb check</title>
+<style>body{margin:0;background:#0C1626}</style>
+<script type="importmap">
+{ "imports": {
+    "three": "./vendor/three.module.js",
+    "three/addons/": "./vendor/addons/"
+} }
+</script>
+</head><body>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0C1626);
+const camera = new THREE.PerspectiveCamera(40, innerWidth/innerHeight, 0.01, 100);
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+document.body.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x445566, 1.2));
+const dl = new THREE.DirectionalLight(0xffffff, 1.6); dl.position.set(2,3,2); scene.add(dl);
+
+window.__ready = false;
+window.__info = null;
+const params = new URLSearchParams(location.search);
+const file = params.get('f') || 'модель_sam3.glb';
+new GLTFLoader().load(encodeURIComponent(file), g => {
+  const root = g.scene;
+  const box = new THREE.Box3().setFromObject(root);
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  root.position.sub(center);
+  scene.add(root);
+  const R = Math.max(size.x, size.y, size.z);
+  let meshes = 0, verts = 0, textured = 0;
+  root.traverse(n => { if(n.isMesh){ meshes++; verts += n.geometry.attributes.position.count; if(n.material && n.material.map) textured++; } });
+  window.__info = { size:[+size.x.toFixed(2),+size.y.toFixed(2),+size.z.toFixed(2)], meshes, verts, textured };
+  window.__shoot = async (name, angle) => {
+    const a = angle ?? 0.8;
+    camera.position.set(Math.sin(a)*R*1.7, R*1.1, Math.cos(a)*R*1.7);
+    camera.lookAt(0, 0, 0);
+    renderer.render(scene, camera);
+    const blob = await (await fetch(renderer.domElement.toDataURL('image/png'))).blob();
+    const r = await fetch('/save?name=' + name, { method:'POST', body: blob });
+    return r.status;
+  };
+  window.__ready = true;
+}, undefined, err => { window.__info = { error: String(err) }; });
+</script>
+</body></html>
