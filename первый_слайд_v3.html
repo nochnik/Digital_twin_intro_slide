@@ -22,16 +22,40 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var
 #hdr .sub{font-family:var(--mono);font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--dim);margin-top:6px}
 #hdr .sub b{color:var(--cyan);font-weight:700}
 
-#stack{position:fixed;left:26px;top:50%;transform:translateY(-50%);z-index:10;display:flex;flex-direction:column;gap:10px;width:320px}
-.lay{cursor:pointer;text-align:left;background:var(--glass);border:1px solid var(--line);
+#stack{position:fixed;left:26px;top:50%;transform:translateY(-50%);z-index:10;display:flex;flex-direction:column;
+  gap:10px;width:346px;padding-left:26px}
+/* линия процесса: связывает все контуры и шаги в одну цепочку */
+#navline{position:absolute;left:12px;top:20px;bottom:20px;width:2px;background:rgba(140,170,210,.22);border-radius:2px}
+#navline::after{content:'';position:absolute;left:-4px;bottom:-10px;
+  border-left:5px solid transparent;border-right:5px solid transparent;border-top:10px solid rgba(140,170,210,.4)}
+#navfill{position:absolute;left:0;top:0;width:100%;height:0;border-radius:2px;
+  background:linear-gradient(180deg,rgba(79,227,255,.5),var(--nc,#F0AE4A));
+  transition:height .45s cubic-bezier(.4,0,.2,1)}
+/* позиционируется через transform: у растянутого контейнера (top+bottom) свойство
+   top на потомке не отрабатывает, а translateY ещё и анимируется плавнее */
+#navdot{position:absolute;left:-5px;top:0;width:12px;height:12px;margin-top:-6px;border-radius:50%;
+  background:var(--nc,#F0AE4A);box-shadow:0 0 0 3px rgba(5,8,16,.9),0 0 16px var(--nc,#F0AE4A);
+  opacity:0;transition:transform .45s cubic-bezier(.4,0,.2,1),opacity .3s}
+#navdot.on{opacity:1}
+.lay{position:relative;cursor:pointer;text-align:left;background:var(--glass);border:1px solid var(--line);
   border-left:4px solid var(--lc);padding:14px 17px;color:var(--txt);font-family:var(--ui);
   transition:background .2s,border-color .2s,transform .2s;backdrop-filter:blur(8px)}
+.lay::before{content:'';position:absolute;left:-18px;top:50%;margin-top:-5px;width:10px;height:10px;border-radius:50%;
+  background:var(--bg0);border:2px solid var(--line);transition:border-color .25s,background .25s;z-index:1}
+.lay.done::before{border-color:var(--lc)}
+.lay.hot::before{border-color:var(--lc);background:var(--lc)}
 .lay .n{font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;color:var(--dim)}
 .lay .t{font-size:16px;font-weight:600;margin-top:4px;line-height:1.25}
-.lay:hover,.lay.hot{background:rgba(79,227,255,.08);border-color:var(--lc);transform:translateX(4px)}
+.lay:hover,.lay.hot{background:rgba(79,227,255,.08);border-color:var(--lc)}
 .lay.hot .n{color:var(--lc)}
 .lay .tag{display:inline-block;font-family:var(--mono);font-size:8.5px;letter-spacing:.12em;color:var(--dim);
   border:1px solid var(--line);padding:1px 5px;margin-top:4px;text-transform:uppercase}
+/* шаги пласта — узлы на той же линии, визуально легче контуров */
+.lay.step{padding:9px 14px;background:rgba(10,18,32,.6);border-left-width:2px}
+.lay.step::before{width:8px;height:8px;margin-top:-4px;left:-17px}   /* центр совпадает с линией: -17 + 4 = -13 */
+.lay.step .n{font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--lc)}
+.lay.step .t{font-size:13px;font-weight:600;margin-top:2px;color:var(--txt)}
+.lay.step.hot{background:rgba(240,174,74,.10)}
 
 #panel{position:fixed;right:26px;top:50%;transform:translateY(-50%) translateX(30px);z-index:10;
   width:29vw;min-width:330px;max-width:520px;
@@ -108,20 +132,22 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var
   <div class="sub">Целевой образ ЦД Актива КМГ · пилот — Молдабек Восточный · ЭМГ</div>
 </div>
 
-<div id="stack"></div>
+<div id="stack">
+  <div id="navline"><div id="navfill"></div><div id="navdot"></div></div>
+</div>
 
 <aside id="panel">
   <button id="p-close" aria-label="Закрыть">×</button>
   <div id="p-kick"></div>
   <div id="p-name"></div>
   <div id="p-claim"></div>
-  <div class="p-h">Ожидаемый эффект</div>
-  <div id="p-fx"></div>
   <div class="p-h" id="p-h-blocks">Что закрывает</div>
   <div id="p-blocks"></div>
-  <div class="p-h">Модули</div>
+  <div class="p-h" id="p-h-mods">Модули</div>
   <div id="p-mods"></div>
   <div id="p-note"></div>
+  <div class="p-h" id="p-h-fx">Ожидаемый эффект</div>
+  <div id="p-fx"></div>
 </aside>
 
 <div id="road">
@@ -166,25 +192,18 @@ const ZONES = {
     no:'01', name:'ЦД пласта', short:'Пласт', color:'#F0AE4A',
     claim:'Постоянно действующая гидродинамическая модель и приоритизация мероприятий по экономике: планирование не от пробуренных скважин, а от ограничений пласта и геологии.',
     fx:[{v:'−5%', l:'снижение CAPEX'}],
-    blocks:[
-      {t:'Геолого-гидродинамическая модель', i:'Построение и адаптация ГГДМ · модели характеристик вытеснения и Кпрод по скважине'},
-      {t:'Стратегия разработки и подбор мероприятий', i:'Оптимизация ППД, включая нестационарное заводнение · ПВЛГ / ПНЛГ · ГТМ'},
-      {t:'Проектирование разработки, ВНС, ТЭО КИН', i:'Автовыбор системы разработки · оптимизация размещения фонда · ранжирование точек бурения'}
-    ],
+    blocks:[],   // шаги вынесены в список слева — здесь не дублируем
     mods:['ABAI Картопостроитель','ABAI ЦРНС 2.0','ABAI Управление заводнением 2.0','ABAI ПиАГТМ','ГГДМ (КМГИ)'],
     note:'На пилоте: выделена перспективная область истощённого 5-го Юрского объекта, намечено бурение 1–2 горизонтальных скважин.',
     subs:[
-      { n:'01.1', t:'Геолого-гидродинамическая модель', shortT:'ГГДМ', color:'#F0AE4A',
-        what:'Постоянно действующая цифровая модель пласта: построение и адаптация ГГДМ, модели характеристик вытеснения и Кпрод по каждой скважине.',
-        why:'Единая достоверная основа планирования: производственная программа считается от ограничений пласта и геологии, а не от фактически пробуренных скважин.',
+      { n:'Шаг 1', t:'Построение и актуализация ГГДМ', shortT:'ГГДМ', color:'#F0AE4A',
+        what:'Постоянно действующая цифровая модель пласта: структура, свойства коллектора, характеристики вытеснения и Кпрод по каждой скважине.',
         mods:['ABAI Картопостроитель','ГГДМ (КМГИ)'] },
-      { n:'01.2', t:'Стратегия разработки и подбор мероприятий', shortT:'Стратегия и мероприятия', color:'#F0664A',
-        what:'Оптимизация системы ППД, включая нестационарное заводнение; подбор мероприятий ПВЛГ / ПНЛГ и ГТМ на модели.',
-        why:'Мероприятия ранжируются по эффекту и экономике до выхода в поле — растёт успешность ГТМ, сокращаются трудозатраты на рутинные расчёты.',
-        mods:['ABAI Управление заводнением 2.0','ABAI ПиАГТМ'] },
-      { n:'01.3', t:'Проектирование разработки, ВНС, ТЭО КИН', shortT:'Проектирование и ВНС', color:'#E8D44A',
-        what:'Автовыбор системы разработки на 2.5D/3D, оптимизация размещения фонда и заканчивания ГС/МГРП, ранжирование точек бурения.',
-        why:'Кандидаты на бурение подбираются оптимизационными алгоритмами: на пилоте выделена перспективная область 5-го Юрского объекта, намечено 1–2 ГС.',
+      { n:'Шаг 2', t:'Подготовка стратегии разработки месторождения', shortT:'Стратегия разработки', color:'#F0664A',
+        what:'Выбор системы разработки, оптимизация заводнения и подбор мероприятий ГТМ на модели.',
+        mods:['ABAI Управление заводнением 2.0','ABAI ПиАГТМ','ABAI ЦРНС 2.0'] },
+      { n:'Шаг 3', t:'Проведение технико-экономической оценки', shortT:'Технико-экономическая оценка', color:'#E8D44A',
+        what:'Расчёт экономики вариантов разработки: CAPEX и OPEX мероприятий, ранжирование точек бурения по отдаче.',
         mods:['ABAI ЦРНС 2.0'] }
     ]
   },
@@ -203,10 +222,7 @@ const ZONES = {
     no:'03', name:'ЦД добычи и наземной инфраструктуры', short:'Наземная инфраструктура', color:'#35D0C2',
     claim:'Контроль добычи в реальном времени по действующему фонду: модель работает с данными «с поля», реагирует на изменение дебита, обводнённости и давления, предупреждает об отклонениях.',
     fx:[
-      {v:'−13%', l:'ТРЗ на отклонениях режима'},
-      {v:'−15%', l:'ТРЗ на расчёты и ГТМ'},
       {v:'−5%', l:'управляемые потери добычи'},
-      {v:'−3%', l:'энергозатраты'},
       {v:'−3%', l:'CAPEX/OPEX инфраструктуры'}
     ],
     blocks:[
@@ -220,7 +236,7 @@ const ZONES = {
   }
 };
 // ЦД ресурсной базы (ГРР) пока скрыт по решению от 11.08 — вернуть: добавить 'grr' в оба списка
-const ORDER = ['naz','skv','plast'];             // порядок в списке (сверху вниз)
+const ORDER = ['plast','skv','naz'];             // порядок кнопок слева (сверху вниз)
 const RANK_UP = ['plast','skv','naz'];           // порядок слоёв снизу вверх
 
 /* ================================================================
@@ -453,18 +469,22 @@ async function build(){
 
     // ЦД скважины: собственные стволы строго под качалками наземки + подсветка
     if(id === 'skv'){
+      // Подсветка идёт «муфтой» поверх стволов самой модели: координаты и радиус
+      // сняты замером сверху по чёрным трубам GLB, чуть шире — чтобы обнимать трубу.
       z.wellMats = [];
-      const WELLS = [[-72,46],[4,46],[74,47]];    // позиции качалок сняты замером сверху
+      const WELLS = [[-80.5, 81.4], [0.1, 81.5], [80.5, 81.4]];
+      const R_PIPE = 4.2;
       for(const [wx, wz] of WELLS){
-        const wm = new THREE.MeshStandardMaterial({ color:0x14181E, roughness:0.5, metalness:0.55,
-          transparent:true, emissive:new THREE.Color('#9B7BE8'), emissiveIntensity:0 });
-        const tube = new THREE.Mesh(new THREE.CylinderGeometry(3.4, 3.4, (yt-yb)+12, 12), wm);
+        const wm = new THREE.MeshStandardMaterial({ color:'#9B7BE8', roughness:0.35, metalness:0.2,
+          transparent:true, opacity:0, emissive:new THREE.Color('#9B7BE8'), emissiveIntensity:0,
+          depthWrite:false });
+        const tube = new THREE.Mesh(new THREE.CylinderGeometry(R_PIPE*1.18, R_PIPE*1.18, (yt-yb)+10, 14), wm);
         tube.position.set(wx, (yb+yt)/2, wz);
         z.scaleG.add(tube);
         z.wellMats.push(wm);
-        // муфты
+        // муфты — акцент по стволу
         for(const q of [0.25, 0.6]){
-          const ring = new THREE.Mesh(new THREE.TorusGeometry(3.4, 0.55, 8, 16), wm);
+          const ring = new THREE.Mesh(new THREE.TorusGeometry(R_PIPE*1.5, 0.7, 8, 18), wm);
           ring.rotation.x = Math.PI/2;
           ring.position.set(wx, yb + (yt-yb)*q, wz);
           z.scaleG.add(ring);
@@ -541,51 +561,65 @@ renderer.domElement.addEventListener('click', () => {
 addEventListener('keydown', e => { if(e.key === 'Escape'){ state.locked = null; state.hover = null; refresh(); } });
 
 const elStack = document.getElementById('stack');
-for(const id of ORDER){
-  const zd = ZONES[id];
-  const b = document.createElement('button');
-  b.className = 'lay'; b.id = 'lay-'+id;
-  b.style.setProperty('--lc', zd.color);
-  b.innerHTML = `<div class="n">${zd.no} · контур</div><div class="t">${zd.name}</div>`
-    + (id==='grr' ? '<span class="tag">контур 2027</span>' : '');
-  b.addEventListener('mouseenter', () => { state.hover = id; refresh(); });
-  b.addEventListener('mouseleave', () => { state.hover = null; refresh(); });
-  b.addEventListener('click', () => { state.locked = (state.locked===id) ? null : id; refresh(); });
-  elStack.appendChild(b);
+/* Список слева. При выборе ЦД пласта он раскрывается в шаги, остальные контуры
+   уходят — чтобы на экране был один смысловой уровень, а не два сразу. */
+let stackKey = null;
+function buildStack(){
+  const open = state.locked === 'plast';
+  const key = open ? 'plast' : 'all';
+  if(key === stackKey) return;
+  stackKey = key;
+  // линию не пересоздаём — она общая для всей цепочки
+  [...elStack.querySelectorAll('.lay')].forEach(b => b.remove());
+  for(const id of ORDER){
+    const zd = ZONES[id];
+    const b = document.createElement('button');
+    b.className = 'lay'; b.id = 'lay-'+id;
+    b.style.setProperty('--lc', zd.color);
+    b.innerHTML = `<div class="t">${zd.name}</div>`;
+    b.addEventListener('mouseenter', () => { state.hover = id; state.hoverSub = null; refresh(); });
+    b.addEventListener('mouseleave', () => { state.hover = null; refresh(); });
+    b.addEventListener('click', () => {
+      state.locked = (state.locked === id) ? null : id;
+      panelState.sub = null;
+      refresh();
+    });
+    elStack.appendChild(b);
+
+    if(open && id === 'plast' && zd.subs){
+      zd.subs.forEach((s, si) => {
+        const sb = document.createElement('button');
+        sb.className = 'lay step'; sb.id = 'lay-step-'+si;
+        sb.style.setProperty('--lc', s.color);
+        sb.innerHTML = `<div class="n">${s.n}</div><div class="t">${s.t}</div>`;
+        sb.addEventListener('mouseenter', () => { state.hover = 'plast'; state.hoverSub = si; refresh(); });
+        sb.addEventListener('mouseleave', () => { state.hoverSub = null; refresh(); });
+        sb.addEventListener('click', () => { panelState.sub = (panelState.sub === si) ? null : si; refresh(); });
+        elStack.appendChild(sb);
+      });
+    }
+  }
 }
+buildStack();
 
 const $ = s => document.getElementById(s);
 function showPanel(id){
   const zd = ZONES[id];
   if(panelState.zone !== id){ panelState.zone = id; panelState.sub = null; }
   $('panel').style.setProperty('--pc', zd.color);
-  $('p-kick').textContent = `Контур ${zd.no} · из чего строится ЦД Актива`;
+  $('p-kick').textContent = 'Из чего строится ЦД Актива';
   $('p-name').textContent = zd.name;
   $('p-claim').textContent = zd.claim;
   $('p-fx').innerHTML = zd.fx.map(f => `<div class="fx"><div class="v">${f.v}</div><div class="l">${f.l}</div></div>`).join('');
-  if(zd.subs && panelState.sub === null){
-    // пласт: три составляющие — карточки-модалки, каждая в своём цвете
-    $('p-h-blocks').textContent = 'Составляющие · нажмите для деталей';
-    // порядок карточек повторяет стек на экране: сверху 01.3, снизу 01.1
-    $('p-blocks').innerHTML = zd.subs.map((s,i) => ({s,i})).reverse().map(({s,i}) =>
-      `<div class="sub" data-i="${i}" style="--pc:${s.color}"><div class="sn">${s.n} · составляющая</div><div class="st">${s.t}</div><div class="sd">${s.what}</div><div class="more">Подробнее →</div></div>`).join('');
-    $('p-blocks').querySelectorAll('.sub').forEach(el =>
-      el.addEventListener('click', () => { panelState.sub = +el.dataset.i; showPanel(id); }));
-    $('p-mods').innerHTML = zd.mods.map(m => `<span class="mod">${m}</span>`).join('');
-    $('p-note').textContent = zd.note;
-  } else if(zd.subs){
-    // детальная модалка составляющей: её название — заголовок, контур — подзаголовком
+  if(zd.subs && panelState.sub !== null){
+    // выбран шаг: его название — заголовок, контур остаётся подзаголовком
     const s = zd.subs[panelState.sub];
     $('panel').style.setProperty('--pc', s.color);
-    $('p-kick').textContent = `${s.n} · составляющая`;
+    $('p-kick').textContent = s.n;
     $('p-name').textContent = s.t;
-    $('p-claim').innerHTML = `<span style="color:${s.color}">${zd.no} · ${zd.name}</span> — ${zd.claim}`;
-    $('p-h-blocks').textContent = 'Что это и для чего';
-    $('p-blocks').innerHTML =
-      `<button id="p-back">← Все составляющие</button>
-       <div class="bl"><div class="bt">Что это</div><div class="bi">${s.what}</div></div>
-       <div class="bl"><div class="bt">Для чего</div><div class="bi">${s.why}</div></div>`;
-    $('p-back').addEventListener('click', () => { panelState.sub = null; showPanel(id); });
+    $('p-claim').innerHTML = `<span style="color:${s.color}">${zd.name}</span> — ${zd.claim}`;
+    $('p-h-blocks').textContent = 'Что это';
+    $('p-blocks').innerHTML = `<div class="bl"><div class="bi">${s.what}</div></div>`;
     $('p-mods').innerHTML = s.mods.map(m => `<span class="mod">${m}</span>`).join('');
     $('p-note').textContent = zd.note;
   } else {
@@ -594,6 +628,7 @@ function showPanel(id){
     $('p-mods').innerHTML = zd.mods.map(m => `<span class="mod">${m}</span>`).join('');
     $('p-note').textContent = zd.note;
   }
+  $('p-h-blocks').style.display = $('p-blocks').innerHTML ? '' : 'none';
   $('panel').classList.add('vis');
 }
 $('p-close').addEventListener('click', () => { state.locked = null; state.hover = null; refresh(); });
@@ -604,17 +639,14 @@ function showIntro(){
   $('panel').style.setProperty('--pc', '#4FE3FF');
   $('p-kick').textContent = 'Программа «Цифровой двойник» · целевой образ';
   $('p-name').textContent = 'Цифровой двойник на базе ИС ABAI';
-  $('p-claim').textContent = 'Это интеллектуальная виртуальная копия нефтегазовых активов которая в режиме реального времени обрабатывает данные со скважин и геологических пластов создавая живую модель месторождения.Технология позволяет проактивно реагировать - моделировать сценарий добычи, предотвращать аварии, обеспечивая устойчивый вклад нефтегазовой отрасли в экономику страны.';
+  $('p-claim').textContent = 'Это интеллектуальная виртуальная копия производственных обьектов реального мира.';
   // KPI масштаба программы — перенесены из презентации проекта 2026 г. (project1648547)
   $('p-fx').innerHTML =
       `<div class="fx"><div class="v">12</div><div class="l">месторождений к 2028 году</div></div>`
     + `<div class="fx"><div class="v">90%</div><div class="l">добычи КМГ в периметре</div></div>`
     + `<div class="fx"><div class="v">20</div><div class="l">производственных процессов</div></div>`;
-  $('p-h-blocks').textContent = 'Как смотреть';
-  $('p-blocks').innerHTML =
-    `<div class="bl"><div class="bt">Наведите на слой</div><div class="bi">Слой превращается в свою цифровую копию — так физический объект становится данными.</div></div>
-     <div class="bl"><div class="bt">Нажмите на слой</div><div class="bi">Слой выходит в центр, остальные раздвигаются; справа — подробности контура. У пласта три составляющие — каждая кликабельна отдельно.</div></div>
-     <div class="bl"><div class="bt">Esc</div><div class="bi">Вернуть модель в исходное состояние.</div></div>`;
+  $('p-blocks').innerHTML = '';
+  $('p-h-blocks').style.display = 'none';
   $('p-mods').innerHTML = ['ЦД пласта','ЦД скважины','ЦД добычи и наземной инфраструктуры'].map(m => `<span class="mod">${m}</span>`).join('');
   $('p-note').textContent = 'ЦД ресурсной базы (ГРР) — контур 2027 года, будет добавлен после уточнения периметра.';
   $('panel').classList.add('vis');
@@ -624,10 +656,45 @@ const chip = $('chip');
 function refresh(){
   const a = active();
   for(const id in zones) zones[id].target = (id === a) ? 1 : 0;
-  for(const id of ORDER) $('lay-'+id).classList.toggle('hot', id === a);
+  buildStack();
+  for(const id of ORDER){ const b = $('lay-'+id); if(b) b.classList.toggle('hot', id === a); }
+  if(state.locked === 'plast'){
+    const cur = panelState.sub !== null ? panelState.sub : state.hoverSub;
+    ZONES.plast.subs.forEach((_, si) => {
+      const b = $('lay-step-'+si); if(b) b.classList.toggle('hot', si === cur);
+    });
+  }
   if(a) showPanel(a); else showIntro();
   controls.autoRotateSpeed = a ? 0.55 : 1.7;
+  updateNavLine();
+  // список меняет высоту и заново центрируется — уточняем позицию, когда раскладка устоялась
+  requestAnimationFrame(updateNavLine);
   fitBetweenPanels();
+}
+
+/* Заливка линии и бегущая точка доходят до текущего узла: видно, что процесс
+   идёт от пласта через шаги к следующим контурам, а не набор отдельных кнопок. */
+function updateNavLine(){
+  const line = $('navline'), fill = $('navfill'), dot = $('navdot');
+  if(!line) return;
+  const sTop = elStack.getBoundingClientRect().top;
+  const lTop = line.getBoundingClientRect().top;
+  const btns = [...elStack.querySelectorAll('.lay')];
+  const hot = btns.filter(b => b.classList.contains('hot')).pop();
+  if(!hot){
+    fill.style.height = '0px';
+    dot.classList.remove('on');
+    btns.forEach(b => b.classList.remove('done'));
+    return;
+  }
+  const centerOf = b => { const r = b.getBoundingClientRect(); return r.top + r.height/2; };
+  const y = centerOf(hot);
+  line.style.setProperty('--nc', getComputedStyle(hot).getPropertyValue('--lc').trim() || '#F0AE4A');
+  const dy = Math.max(0, y - lTop);
+  fill.style.height = dy + 'px';
+  dot.style.transform = 'translateY(' + dy + 'px)';
+  dot.classList.add('on');
+  btns.forEach(b => b.classList.toggle('done', centerOf(b) <= y + 1));
 }
 showIntro();
 fitBetweenPanels();
@@ -681,7 +748,7 @@ function animate(){
       chip.textContent = s.n + ' · ' + s.shortT;
     } else {
       chip.style.setProperty('--cc', ZONES[hitZone].color);
-      chip.textContent = ZONES[hitZone].no + ' · ' + ZONES[hitZone].short;
+      chip.textContent = ZONES[hitZone].short;
     }
   } else chip.style.display = 'none';
 
@@ -736,7 +803,10 @@ function animate(){
       if(p.corners) p.corners.material.opacity = m;
     }
     // стволы скважин: не гаснут со слоем, а загораются фиолетовым
-    if(z.wellMats) for(const wm of z.wellMats) wm.emissiveIntensity = m * (2.2 + 0.8*Math.sin(t*3.4));
+    if(z.wellMats) for(const wm of z.wellMats){
+      wm.opacity = m * 0.85;
+      wm.emissiveIntensity = m * (2.2 + 0.8*Math.sin(t*3.4));
+    }
     // подслои пласта: свой цвет, лёгкое разделение, клипы следуют за слоем и масштабом
     if(z.subs3d){
       const plastActive = (act === 'plast');
@@ -813,6 +883,7 @@ function fitBetweenPanels(){
 addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight);
   fitBetweenPanels();
+  updateNavLine();
 });
 
 window.__dbg = { renderer, scene, camera, state, zones, refresh, world, get pickCount(){ return pickMeshes.length; } };
