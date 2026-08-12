@@ -63,8 +63,11 @@
     transition:opacity .25s,color .25s,border-color .25s,background .25s}
   .btn:hover,.btn:focus-visible{opacity:1;color:var(--cyan);border-color:var(--cyan);
     background:rgba(79,227,255,.08);outline:none}
+  /* Справа сверху сменяются две кнопки на одном месте: пока идёт подводка —
+     «пропустить», после неё, на модели, — уход на отдельный слайд. Вторая
+     живёт поверх модели, поэтому слой выше iframe. */
   #skip{right:26px;top:20px}
-  #back{left:26px;top:20px}
+  #tov1{right:26px;top:20px;z-index:18;display:none}
 
   /* ── стартовый экран ─────────────────────────────────────────────────── */
   #start{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;
@@ -101,8 +104,8 @@
 <div id="go-next"><span>дальше</span><span class="a">→</span></div>
 <div id="bar"></div>
 
-<a class="btn" id="back" href="первый_слайд_v3.html">Демо показа v1<span class="arw">→</span></a>
 <button class="btn" id="skip">пропустить<span>→</span></button>
+<a class="btn" id="tov1" href="первый_слайд_v3.html">Демо показа v1<span>→</span></a>
 
 <div id="start">
   <div class="k">КазМунайГаз · программа цифрового двойника</div>
@@ -241,8 +244,12 @@ function atBoundary(){
   if (phase !== 'play') return;
   const t = TAKES[take];
   if (film.currentTime >= t.to - EPS){
+    /* Только пауза, без перемотки. Раньше здесь стояло `currentTime = t.to`
+       «чтобы ровно на границе» — и давало микрофриз на каждом стыке: любая
+       перемотка сбрасывает декодер и заставляет его подниматься с опорного
+       кадра. Лента и так стоит на границе с точностью меньше кадра, а
+       следующий такт продолжается с этого же места. */
     film.pause();
-    film.currentTime = t.to;            // ровно на границе, без наезда на чужой кадр
     ticks[take].style.setProperty('--p', 1);
     hold();
   } else {
@@ -284,7 +291,15 @@ function playTake(idx, { seek = false } = {}){
   if (seek || Math.abs(film.currentTime - t.from) > 0.25) film.currentTime = t.from;
 
   film.playbackRate = t.rate || 1;
-  film.play().catch(() => {});
+  // Если данных ещё не хватило, браузер отклоняет play(). Молча проглотить
+  // нельзя: показ тогда просто не тронется с места. Ждём готовности и пробуем
+  // ещё раз.
+  film.play().catch(() => {
+    film.addEventListener('canplay', () => {
+      if (phase === 'play') film.play().catch(() => {});
+      armBoundary();
+    }, { once:true });
+  });
   armBoundary();
   watch(idx);
 }
@@ -344,14 +359,15 @@ function finale(){
   try { slide.contentWindow.postMessage('слайд:показать', '*'); } catch(_){}
   slide.classList.add('on');
   setTimeout(() => {
-    ['#cap','#bar','#skip','#back','#go-next'].forEach(s => $(s).style.display = 'none');
+    ['#cap','#bar','#skip','#go-next'].forEach(s => $(s).style.display = 'none');
+    $('#tov1').style.display = 'inline-flex';   // на её место встаёт уход на слайд
   }, 1100);
 }
 
 /* ── управление ──────────────────────────────────────────────────────── */
 $('#skip').addEventListener('click', e => { e.stopPropagation(); finale(); });
 // «Демо показа v1» уводит на сам слайд, а не разворачивает его внутри показа
-$('#back').addEventListener('click', e => e.stopPropagation());
+$('#tov1').addEventListener('click', e => e.stopPropagation());
 
 addEventListener('keydown', e => {
   if (phase === 'idle' || phase === 'done') return;
@@ -385,10 +401,21 @@ film.addEventListener('progress', () => {
    спит в редком рендере до финала. */
 slide.src = SLIDE;
 
-$('#go').addEventListener('click', e => {
-  e.stopPropagation();
+/* Показ не должен стартовать на недогруженной ленте: первый такт дёрнется или
+   не тронется вовсе. Если данных мало — кнопка честно говорит, что ждём, и
+   стартует сама, как только их хватит. */
+function начать(){
+  if (phase !== 'idle') return;        // оба сторожа готовности могут сработать
   $('#start').classList.add('gone');
   playTake(0, { seek:true });
+}
+
+$('#go').addEventListener('click', e => {
+  e.stopPropagation();
+  if (film.readyState >= 3) return начать();
+  $('#go').firstChild.textContent = 'готовим ленту';
+  film.addEventListener('canplaythrough', начать, { once:true });
+  film.addEventListener('canplay', () => setTimeout(начать, 400), { once:true });
 });
 </script>
 </body>
