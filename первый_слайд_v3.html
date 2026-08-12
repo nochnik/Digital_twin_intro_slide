@@ -111,14 +111,19 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var
 #hint{position:fixed;bottom:62px;left:26px;z-index:10;font-family:var(--mono);font-size:9.5px;
   letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
 
-/* переход ко второй части показа — неприметный, в том же окне */
-#next{position:fixed;left:26px;bottom:22px;z-index:12;display:inline-flex;align-items:center;gap:8px;
+/* переходы наружу — неприметные, в том же окне */
+#next,#demo2{position:fixed;z-index:12;display:inline-flex;align-items:center;gap:8px;
   font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
   color:var(--dim);text-decoration:none;border:1px solid var(--line);padding:8px 13px;
   background:rgba(10,18,32,.45);backdrop-filter:blur(6px);opacity:.42;
   transition:opacity .25s,color .25s,border-color .25s,background .25s}
-#next:hover,#next:focus-visible{opacity:1;color:var(--cyan);border-color:var(--cyan);background:rgba(79,227,255,.08)}
-#next .arw{font-size:12px;line-height:1}
+#next:hover,#next:focus-visible,
+#demo2:hover,#demo2:focus-visible{opacity:1;color:var(--cyan);border-color:var(--cyan);background:rgba(79,227,255,.08)}
+#next .arw,#demo2 .arw{font-size:12px;line-height:1}
+/* ко второй части показа — снизу слева */
+#next{left:26px;bottom:22px}
+/* к сборке с гео-подводкой — сверху справа, над панелью контура */
+#demo2{right:26px;top:20px}
 
 #chip{position:fixed;z-index:20;pointer-events:none;font-family:var(--mono);font-size:10.5px;
   letter-spacing:.14em;text-transform:uppercase;color:#EAF2FF;background:rgba(8,14,26,.9);
@@ -180,6 +185,9 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var
 
 <div id="hint">Вращение — мышь · наведите на слой модели или список слева</div>
 <a id="next" href="https://znewk.github.io/kmg-digital-twin-presentation/">2 часть<span class="arw">→</span></a>
+<a id="demo2" href="demo_with_map.html">Демо показа v2<span class="arw">→</span></a>
+<!-- слайд открыт внутри demo_with_map.html — кнопка вела бы саму в себя -->
+<script>if (window.self !== window.top) document.getElementById('demo2').remove();</script>
 <div id="chip"></div>
 
 <script type="importmap">
@@ -300,7 +308,10 @@ controls.enablePan = false;
 controls.minDistance = 240; controls.maxDistance = 760;
 controls.minPolarAngle = 0.5; controls.maxPolarAngle = 1.35;
 controls.target.set(0, -40, 0);
-controls.autoRotate = true; controls.autoRotateSpeed = 1.7;
+// Скорость вращения одна на все состояния: раньше на холостом ходу стояло 1.7,
+// а при выбранном контуре 0.55 — модель заметно тормозила на наведении.
+const ROT_SPEED = 0.55;
+controls.autoRotate = true; controls.autoRotateSpeed = ROT_SPEED;
 
 const world = new THREE.Group(); scene.add(world);
 
@@ -705,7 +716,7 @@ function refresh(){
     });
   }
   if(a) showPanel(a); else showIntro();
-  controls.autoRotateSpeed = a ? 0.55 : 1.7;
+  controls.autoRotateSpeed = ROT_SPEED;
   updateNavLine();
   // список меняет высоту и заново центрируется — уточняем позицию, когда раскладка устоялась
   requestAnimationFrame(updateNavLine);
@@ -757,8 +768,33 @@ function subSpread(id){
 }
 
 const clock = new THREE.Clock();
+
+/* Спящий режим для встроенного показа.
+
+   demo_with_map.html держит слайд в скрытом iframe всю подводку, чтобы к финалу
+   сцена была готова. Но скрытый — не значит бесплатный: кадровый цикл крутится
+   на полной частоте и на каждом кадре стреляет лучом по геометрии, и лента
+   поверх начинает заикаться.
+
+   Пока родитель не сказал «показываю», рендерим редко — только чтобы кадр
+   появился по мере подгрузки моделей — и не трассируем вовсе. */
+const ВСТРОЕН = window.self !== window.top;
+let живой = !ВСТРОЕН, последнийСон = 0;
+addEventListener('message', e => { if(e.data === 'слайд:показать') живой = true; });
+
 function animate(){
   requestAnimationFrame(animate);
+
+  if(!живой){
+    const now = performance.now();
+    if(now - последнийСон < 250) return;
+    последнийСон = now;
+    clock.getDelta();                 // не копим дельту к пробуждению
+    controls.update();
+    renderer.render(scene, camera);
+    return;
+  }
+
   const dt = Math.min(clock.getDelta(), 0.1);
   const t = clock.elapsedTime;
   const k = 1 - Math.exp(-dt*8);
@@ -926,7 +962,9 @@ addEventListener('resize', () => {
   updateNavLine();
 });
 
-window.__dbg = { renderer, scene, camera, state, zones, refresh, world, get pickCount(){ return pickMeshes.length; } };
+window.__dbg = { renderer, scene, camera, state, zones, refresh, world,
+  get pickCount(){ return pickMeshes.length; },
+  get спит(){ return !живой; } };
 </script>
 </body>
 </html>

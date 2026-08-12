@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Демо показа v2 · подводка к цифровому двойнику</title>
+<style>
+  :root{
+    --cyan:#4FE3FF; --amber:#F0AE4A; --teal:#35D0C2; --viol:#9B7BE8;
+    --bg0:#050810; --bg1:#0C1626;
+    --txt:#D7E2F2; --dim:#7C8DA6; --line:rgba(140,170,210,.22);
+    --mono:"JetBrains Mono",ui-monospace,"SF Mono",Consolas,monospace;
+    --serif:"IBM Plex Serif",Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg0);color:var(--txt);overflow:hidden;
+    font-family:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased}
+
+  /* Одна лента на весь показ. Ни второго слоя, ни подмены источника —
+     переключать в кадре нечего, поэтому и мигать нечему. */
+  #film{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;
+    background:var(--bg0)}
+  #vig{position:fixed;inset:0;pointer-events:none;z-index:4;
+    background:
+      radial-gradient(ellipse at 50% 45%,transparent 45%,rgba(5,8,16,.55) 100%),
+      linear-gradient(to top,rgba(5,8,16,.82) 0%,transparent 34%)}
+
+  /* ── титры ───────────────────────────────────────────────────────────── */
+  #cap{position:fixed;left:44px;bottom:74px;z-index:6;max-width:46ch;
+    opacity:0;transform:translateY(10px);transition:opacity .5s,transform .5s}
+  #cap.on{opacity:1;transform:none}
+  #cap .k{font-family:var(--mono);font-size:10px;letter-spacing:.26em;
+    text-transform:uppercase;color:var(--cc,var(--cyan))}
+  #cap .t{font-family:var(--serif);font-size:36px;font-weight:600;
+    line-height:1.14;margin-top:8px}
+  #cap .s{font-size:14px;color:var(--dim);margin-top:9px;line-height:1.5}
+
+  /* ── приглашение к следующему такту ──────────────────────────────────── */
+  #go-next{position:fixed;right:44px;bottom:74px;z-index:6;display:flex;
+    align-items:center;gap:11px;font-family:var(--mono);font-size:10px;
+    letter-spacing:.2em;text-transform:uppercase;color:var(--dim);
+    opacity:0;transition:opacity .4s;pointer-events:none}
+  #go-next.on{opacity:1}
+  #go-next .a{font-size:17px;line-height:1;color:var(--cyan);
+    animation:nudge 1.7s ease-in-out infinite}
+  @keyframes nudge{0%,100%{transform:translateX(0);opacity:.55}
+                   50%{transform:translateX(5px);opacity:1}}
+
+  /* ── шкала тактов ────────────────────────────────────────────────────── */
+  #bar{position:fixed;left:0;right:0;bottom:0;height:2px;z-index:7;
+    background:rgba(140,170,210,.14);display:flex;gap:2px;padding:0 2px}
+  #bar i{flex:1;background:rgba(140,170,210,.14);position:relative;overflow:hidden}
+  #bar i::after{content:'';position:absolute;inset:0;background:var(--cyan);
+    transform:scaleX(var(--p,0));transform-origin:left;transition:transform .1s linear}
+
+  /* ── кнопки, в стиле слайда ──────────────────────────────────────────── */
+  .btn{position:fixed;z-index:8;display:inline-flex;align-items:center;gap:8px;
+    font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--dim);text-decoration:none;border:1px solid var(--line);padding:8px 13px;
+    background:rgba(10,18,32,.45);backdrop-filter:blur(6px);opacity:.42;cursor:pointer;
+    transition:opacity .25s,color .25s,border-color .25s,background .25s}
+  .btn:hover,.btn:focus-visible{opacity:1;color:var(--cyan);border-color:var(--cyan);
+    background:rgba(79,227,255,.08);outline:none}
+  #skip{right:26px;top:20px}
+  #back{left:26px;top:20px}
+
+  /* ── стартовый экран ─────────────────────────────────────────────────── */
+  #start{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:22px;text-align:center;
+    background:radial-gradient(ellipse at 50% 34%,#0C1626 0%,#050810 72%);
+    transition:opacity .7s}
+  #start.gone{opacity:0;pointer-events:none}
+  #start .k{font-family:var(--mono);font-size:10px;letter-spacing:.3em;
+    text-transform:uppercase;color:var(--cyan)}
+  #start h1{font-family:var(--serif);font-size:40px;font-weight:600;margin:0;line-height:1.2}
+  #start p{margin:0;color:var(--dim);max-width:52ch;line-height:1.6}
+  #go{margin-top:10px;position:static;opacity:1;color:var(--txt);
+    border-color:var(--cyan);padding:13px 26px;font-size:11px}
+  #go:hover{background:rgba(79,227,255,.12)}
+  #start .hint{font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--dim);margin-top:26px;line-height:1.9}
+  #start .load{font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--dim);opacity:.7;height:12px}
+
+  /* ── живой слайд: грузится под лентой с начала показа ────────────────── */
+  #slide{position:fixed;inset:0;width:100%;height:100%;border:0;z-index:15;
+    opacity:0;pointer-events:none;transition:opacity .9s ease-in}
+  #slide.on{opacity:1;pointer-events:auto}
+</style>
+</head>
+<body>
+
+<video id="film" muted playsinline preload="auto"
+       poster="переход/постер.jpg"
+       src="переход/подводка.mp4"></video>
+<div id="vig"></div>
+
+<div id="cap"><div class="k"></div><div class="t"></div><div class="s"></div></div>
+<div id="go-next"><span>дальше</span><span class="a">→</span></div>
+<div id="bar"></div>
+
+<a class="btn" id="back" href="первый_слайд_v3.html">Демо показа v1<span class="arw">→</span></a>
+<button class="btn" id="skip">пропустить<span>→</span></button>
+
+<div id="start">
+  <div class="k">КазМунайГаз · программа цифрового двойника</div>
+  <h1>Цифровой двойник актива</h1>
+  <p>Подводка от планеты к пилотному месторождению: Казахстан → Атырауская
+     область → Восточный Молдабек → объект промысла → цифровой двойник.</p>
+  <button class="btn" id="go">начать показ<span>→</span></button>
+  <div class="load" id="load"></div>
+  <div class="hint">такт вперёд: → · enter · пробел · клик<br>
+    такт назад: ← · backspace &nbsp;·&nbsp; esc — сразу к двойнику · f — полный экран</div>
+</div>
+
+<iframe id="slide" title="Цифровой двойник — первый слайд"></iframe>
+
+<script>
+/* ────────────────────────────────────────────────────────────────────────
+   Подводка — одна непрерывная лента `переход/подводка.mp4`. Такт это не
+   отдельный файл, а отрезок внутри неё.
+
+   Почему так. Пока такты были девятью файлами, каждое переключение меняло
+   источник картинки, и на стыке проскакивал кадр чужого состояния. Здесь
+   переключать нечего: шаг вперёд — это просто снятие паузы, лента идёт
+   дальше с того же кадра, на котором стояла. Ни перемотки, ни подгрузки.
+
+   Шаг назад — единственное место, где перемотка нужна. Лента собрана с
+   опорными кадрами ровно на границах тактов (`-force_key_frames`), поэтому
+   перемотка попадает в границу, а не в ближайший опорный кадр в стороне.
+
+   Границы взяты по факту из готового файла, а не из задуманных значений:
+   кодировщик ставит опорный кадр в ближайший кадр сетки, расхождение до
+   1/24 секунды.
+   ──────────────────────────────────────────────────────────────────────── */
+
+const TAKES = [
+  { from:0,      to:5.208,  rate:1.5,
+    k:'Программа «Цифровой двойник» · целевой образ',
+    t:'Цифровой двойник на базе ИС ABAI',
+    s:'Это интеллектуальная виртуальная копия производственных объектов реального мира',
+    c:'#4FE3FF' },
+
+  // Казахстан проходим без остановки: два ролика подряд, один такт.
+  { from:5.208,  to:15.5,   rate:1.5,
+    k:'Пилот программы',
+    t:'АО «Эмбамунайгаз»',
+    s:'Атырауская область',
+    c:'#F0AE4A' },
+
+  { from:15.5,   to:23.5,   rate:1,
+    k:'Ресурсная база',
+    t:'Месторождения области',
+    s:'Пилот выбран по зрелости фонда и полноте данных',
+    c:'#F0AE4A' },
+
+  { from:23.5,   to:28.708, rate:1,
+    k:'Пилот выбран',
+    t:'Восточный Молдабек',
+    s:'Кызылкогинский район · разработка с 1968 года',
+    c:'#4FE3FF' },
+
+  { from:28.708, to:33.833, rate:1,
+    k:'Границы пилота',
+    t:'Промысел',
+    s:'До 30 скважин ШГН и УЭВН · 5 кустовых площадок · 1 объект подготовки',
+    c:'#4FE3FF' },
+
+  { from:33.833, to:39,     rate:1,
+    k:'Карта объектов',
+    t:'Наземная инфраструктура',
+    s:'Нефтесбор · ЦППН · факел · КНС · подстанция · ВЛ',
+    c:'#35D0C2' },
+
+  { from:39,     to:44.208, rate:1,
+    k:'Объект выбран',
+    t:'Скважина с ШГН',
+    s:'Параметры, режим, привязанные модули — по клику',
+    c:'#4FE3FF' },
+
+  { from:44.208, to:49.33,  rate:1,
+    k:'Физическое становится цифровым',
+    t:'Цифровой двойник',
+    s:'Четыре контура: пласт · скважина · добыча и наземка · ресурсная база',
+    c:'#9B7BE8' },
+];
+
+const SLIDE = 'первый_слайд_v3.html';
+const EPS = 0.03;                       // допуск сравнения времени, меньше кадра
+
+const $ = s => document.querySelector(s);
+const film = $('#film'), cap = $('#cap'), bar = $('#bar'),
+      slide = $('#slide'), nudge = $('#go-next');
+
+TAKES.forEach(() => bar.appendChild(document.createElement('i')));
+const ticks = [...bar.children];
+
+let take = -1;
+let phase = 'idle';                     // idle | play | hold | done
+let raf = 0;
+
+/* ── титры ───────────────────────────────────────────────────────────── */
+function showCap(t){
+  cap.classList.remove('on');
+  setTimeout(() => {
+    cap.style.setProperty('--cc', t.c);
+    cap.querySelector('.k').textContent = t.k;
+    cap.querySelector('.t').textContent = t.t;
+    cap.querySelector('.s').textContent = t.s;
+    cap.classList.add('on');
+  }, 200);
+}
+
+function fillTicks(upto){
+  ticks.forEach((el, n) => el.style.setProperty('--p', n < upto ? 1 : 0));
+}
+
+/* ── сторож границы такта ─────────────────────────────────────────────
+   Лента обязана встать ровно на границе. Держать это на requestAnimationFrame
+   нельзя: браузер замораживает кадровый цикл, как только вкладка перестаёт
+   отрисовываться, — а воспроизведение продолжается, и такт уезжает дальше.
+   Проверено: лента проскакивала на десять секунд вперёд.
+
+   Поэтому границу сторожит таймер по остатку времени, подстрахованный
+   событием `timeupdate` (оно приходит и в фоне). Кадровый цикл оставлен
+   только на шкалу — если он замрёт, показ от этого не сломается.
+   ──────────────────────────────────────────────────────────────────── */
+let boundary = 0;
+
+function armBoundary(){
+  clearTimeout(boundary);
+  if (phase !== 'play') return;
+  const t = TAKES[take];
+  const left = (t.to - film.currentTime) / (film.playbackRate || 1);
+  boundary = setTimeout(atBoundary, Math.max(0, left * 1000) + 25);
+}
+
+function atBoundary(){
+  if (phase !== 'play') return;
+  const t = TAKES[take];
+  if (film.currentTime >= t.to - EPS){
+    film.pause();
+    film.currentTime = t.to;            // ровно на границе, без наезда на чужой кадр
+    ticks[take].style.setProperty('--p', 1);
+    hold();
+  } else {
+    armBoundary();                      // ещё не дошли — ждём остаток
+  }
+}
+
+film.addEventListener('timeupdate', () => {
+  if (phase === 'play' && film.currentTime >= TAKES[take].to - EPS) atBoundary();
+});
+
+/* шкала — отдельно, её пропажа безобидна */
+function watch(idx){
+  cancelAnimationFrame(raf);
+  const t = TAKES[idx];
+  const step = () => {
+    if (phase !== 'play' || take !== idx) return;
+    const p = (film.currentTime - t.from) / (t.to - t.from);
+    ticks[idx].style.setProperty('--p', Math.max(0, Math.min(1, p)));
+    raf = requestAnimationFrame(step);
+  };
+  raf = requestAnimationFrame(step);
+}
+
+/* ── такт ────────────────────────────────────────────────────────────── */
+function playTake(idx, { seek = false } = {}){
+  if (idx >= TAKES.length) return finale();
+  if (idx < 0) idx = 0;
+
+  const t = TAKES[idx];
+  take = idx;
+  phase = 'play';
+  nudge.classList.remove('on');
+  showCap(t);
+  fillTicks(idx);
+
+  // Вперёд ничего не перематываем: лента и так стоит на этом кадре.
+  // Перемотка только когда прыгаем — назад или на старте.
+  if (seek || Math.abs(film.currentTime - t.from) > 0.25) film.currentTime = t.from;
+
+  film.playbackRate = t.rate || 1;
+  film.play().catch(() => {});
+  armBoundary();
+  watch(idx);
+}
+
+/* ── пауза на последнем кадре такта ──────────────────────────────────── */
+function hold(){
+  cancelAnimationFrame(raf);
+  clearTimeout(boundary);
+  phase = 'hold';
+  nudge.classList.add('on');
+}
+
+/* ── вперёд ──────────────────────────────────────────────────────────── */
+function forward(){
+  if (phase === 'done' || phase === 'idle') return;
+
+  // Нажали посреди такта — доводим его до конца ускорением, а не прыжком:
+  // кадр стыка должен остаться тем же.
+  if (phase === 'play'){
+    const t = TAKES[take], left = t.to - film.currentTime;
+    if (left > 0.06){
+      film.playbackRate = Math.min(16, Math.max(2, left / 0.3));
+      armBoundary();                    // скорость сменилась — пересчитываем остаток
+    } else {
+      atBoundary();
+    }
+    return;
+  }
+
+  if (take + 1 < TAKES.length) playTake(take + 1);
+  else finale();
+}
+
+/* ── назад ───────────────────────────────────────────────────────────── */
+function backward(){
+  if (phase === 'done' || phase === 'idle') return;
+  // с середины такта — в его начало, с паузы — на такт раньше
+  const to = (phase === 'play' && film.currentTime - TAKES[take].from > 0.6)
+    ? take : take - 1;
+  playTake(Math.max(0, to), { seek:true });
+}
+
+/* ── финал ────────────────────────────────────────────────────────────
+   Слайд поднялся в скрытом iframe ещё на первом такте и всё это время
+   рендерил сцену. Лента остаётся на своём последнем кадре, и мы наплываем
+   на живую сцену: ни загрузки, ни вспышки, а наплыв заодно съедает
+   остаточную разницу между кадром ленты и рендером.
+   ──────────────────────────────────────────────────────────────────── */
+function finale(){
+  cancelAnimationFrame(raf);
+  phase = 'done';
+  film.pause();
+  fillTicks(TAKES.length);
+  cap.classList.remove('on');
+  nudge.classList.remove('on');
+  // будим слайд: всю подводку он рендерил редко, чтобы не отбирать кадры у ленты
+  try { slide.contentWindow.postMessage('слайд:показать', '*'); } catch(_){}
+  slide.classList.add('on');
+  setTimeout(() => {
+    ['#cap','#bar','#skip','#back','#go-next'].forEach(s => $(s).style.display = 'none');
+  }, 1100);
+}
+
+/* ── управление ──────────────────────────────────────────────────────── */
+$('#skip').addEventListener('click', e => { e.stopPropagation(); finale(); });
+// «Демо показа v1» уводит на сам слайд, а не разворачивает его внутри показа
+$('#back').addEventListener('click', e => e.stopPropagation());
+
+addEventListener('keydown', e => {
+  if (phase === 'idle' || phase === 'done') return;
+  const c = e.code;
+  if (c === 'ArrowRight' || c === 'Enter' || c === 'NumpadEnter' ||
+      c === 'Space' || c === 'PageDown'){ e.preventDefault(); forward(); }
+  if (c === 'ArrowLeft' || c === 'Backspace' || c === 'PageUp'){ e.preventDefault(); backward(); }
+  if (c === 'Escape') finale();
+  if (c === 'KeyF'){
+    document.fullscreenElement ? document.exitFullscreen()
+                               : document.documentElement.requestFullscreen();
+  }
+});
+
+addEventListener('click', () => { if (phase === 'play' || phase === 'hold') forward(); });
+
+/* ── старт ───────────────────────────────────────────────────────────── */
+const load = $('#load');
+const ready = () => film.readyState >= 3;
+
+film.addEventListener('progress', () => {
+  if (!ready() && film.buffered.length){
+    const got = film.buffered.end(film.buffered.length - 1);
+    load.textContent = 'лента готова на ' + Math.round(got / (film.duration || 49) * 100) + '%';
+  } else if (ready()) load.textContent = '';
+});
+
+/* Слайд поднимаем сразу, не дожидаясь начала показа: 26 МБ моделей и их
+   выгрузка на видеокарту — самая тяжёлая часть, и она должна пройти пока
+   докладчик читает вступление, а не под уже играющей лентой. Дальше слайд
+   спит в редком рендере до финала. */
+slide.src = SLIDE;
+
+$('#go').addEventListener('click', e => {
+  e.stopPropagation();
+  $('#start').classList.add('gone');
+  playTake(0, { seek:true });
+});
+</script>
+</body>
+</html>

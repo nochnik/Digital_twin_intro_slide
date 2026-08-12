@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Переход в ЦД — раскадровка</title>
+<style>
+  :root{
+    --bg0:#050810; --bg1:#0C1626; --cyan:#4FE3FF; --amber:#F0AE4A;
+    --txt:#D7E2F2; --dim:#7C8DA6; --glass:rgba(10,18,32,.82);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg0);color:var(--txt);
+    font:15px/1.5 "Inter",system-ui,-apple-system,"Segoe UI",sans-serif}
+  header{padding:34px 40px 22px;border-bottom:1px solid rgba(79,227,255,.14)}
+  h1{margin:0 0 8px;font-size:22px;font-weight:600;letter-spacing:.2px}
+  header p{margin:0;color:var(--dim);max-width:70ch}
+  .keys{display:flex;gap:22px;margin-top:14px;color:var(--dim);font-size:13px;
+    letter-spacing:.08em;text-transform:uppercase}
+  .keys b{color:var(--cyan);font-weight:500}
+  main{padding:28px 40px 80px;display:flex;flex-direction:column;gap:26px}
+  figure{margin:0;background:var(--glass);border:1px solid rgba(79,227,255,.12);
+    border-radius:10px;overflow:hidden}
+  figure img{display:block;width:100%;height:auto}
+  figcaption{padding:14px 18px 16px;display:flex;gap:16px;align-items:baseline}
+  .no{font-variant-numeric:tabular-nums;color:var(--cyan);font-size:13px;
+    letter-spacing:.14em;padding-top:2px}
+  .t{font-weight:600}
+  .d{color:var(--dim);font-size:14px}
+  .cut{display:flex;align-items:center;gap:14px;color:var(--dim);font-size:12px;
+    letter-spacing:.14em;text-transform:uppercase;padding:0 4px}
+  .cut::before,.cut::after{content:"";flex:1;height:1px;
+    background:linear-gradient(90deg,transparent,rgba(79,227,255,.3),transparent)}
+  .hard{color:var(--amber)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Переход в цифровой двойник — раскадровка</h1>
+  <p>Мир → Казахстан → Атырауская область → месторождения → Молдабек Восточный →
+     объект → блок ЦД. Десять опорных кадров, девять переходов между ними.
+     Подписи на кадрах намеренно отсутствуют: названия накладываются поверх
+     средствами HTML, чтобы текст был чётким и правился без перегенерации.</p>
+  <div class="keys">
+    <span>кадров <b>10</b></span>
+    <span>переходов <b>9</b></span>
+    <span>формат <b>16:9 · 2752×1536</b></span>
+  </div>
+</header>
+<main>
+
+  <figure>
+    <img src="кадры/01_земля_из_космоса.png" alt="Земля из космоса">
+    <figcaption><span class="no">01</span><span>
+      <span class="t">Земля из космоса.</span>
+      <span class="d">Ночная сторона, Центральная Азия развёрнута к камере,
+      сетка параллелей и меридианов, циановый лимб атмосферы.</span>
+    </span></figcaption>
+  </figure>
+
+  <div class="cut">подлёт · камера снижается</div>
+
+  <figure>
+    <img src="кадры/02_казахстан_подсвечен.png" alt="Казахстан подсвечен">
+    <figcaption><span class="no">02</span><span>
+      <span class="t">Казахстан подсвечен.</span>
+      <span class="d">Евразия занимает кадр, границы страны — цианом,
+      территория залита бирюзовым, соседи — тусклым контуром.</span>
+    </span></figcaption>
+  </figure>
+
+  <div class="cut">подлёт · страна выходит на весь кадр</div>
+
+  <figure>
+    <img src="кадры/03_карта_областей.png" alt="Карта областей">
+    <figcaption><span class="no">03</span><span>
+      <span class="t">Карта областей.</span>
+      <span class="d">Кривизна глобуса ещё читается сверху. Внутренние границы
+      областей — тонкими светящимися линиями. Каспий слева.</span>
+    </span></figcaption>
+  </figure>
+
+  <div class="cut">камера стоит · меняется только подсветка</div>
+
+  <figure>
+    <img src="кадры/04_атырауская_область.png" alt="Атырауская область">
+    <figcaption><span class="no">04</span><span>
+      <span class="t">Атырауская область.</span>
+      <span class="d">Область загорается янтарным, страна гаснет почти в чёрное.
+      Контур приблизительный — в реализации рисуем реальным полигоном.</span>
+    </span></figcaption>
+  </figure>
+
+  <div class="cut">погружение · самый длинный зум</div>
+
+  <figure>
+    <img src="кадры/05_месторождения_области.png" alt="Месторождения области">
+    <figcaption><span class="no">05</span><span>
+      <span class="t">Месторождения области.</span>
+      <span class="d">Низкая орбита над степью и солончаками. Двенадцать
+      лицензионных контуров янтарным, один — цианом.</span>
+    </span></figcaption>
+  </figure>
+
+  <div class="cut">зум на выбранный контур</div>
+
+  <figure>
+    <img src="кадры/06_месторождение_выбрано.png" alt="Месторождение выбрано">
+    <figcaption><span class="no">06</span><span>
+      <span class="t">Молдабек Восточный выбран.</span>
+      <span class="d">Контур на две трети кадра, внутри проступают кусты
+      скважин и связи между ними. Здесь ложится подпись месторождения.</span>
+    </span></figcaption>
+  </figure>
+
+  <div class="cut">зум внутрь контура</div>
+
+  <figure>
+    <img src="кадры/07_план_промысла.png" alt="План промысла">
+    <figcaption><span class="no">07</span><span>
+      <span class="t">План промысла.</span>
+      <span class="d">Ночная аэросъёмка строго сверху: качалки на гравийных
+      площадках в пятнах натриевого света, надземный нефтесбор со стрелками
+      потока, ЦППН с резервуарами в обваловке и колоннами, факел, подстанция,
+      ВЛ, вахтовка с фарами. Каждый объект в своих скобках — кликабелен.</span>
+    </span></figcaption>
+  </figure>
+
+  <div class="cut">наклон камеры · выбор объекта</div>
+
+  <figure>
+    <img src="кадры/08_объект_выбран.png" alt="Объект выбран">
+    <figcaption><span class="no">08</span><span>
+      <span class="t">Объект выбран.</span>
+      <span class="d">Тот же промысел, камера легла на 25° над землёй: горизонт
+      наверху, объекты встали в объём. Одна площадка в кольце выбора,
+      остальные скобки погашены.</span>
+    </span></figcaption>
+  </figure>
+
+  <div class="cut">подлёт к объекту вплотную</div>
+
+  <figure>
+    <img src="кадры/09_подлёт_к_качалке.png" alt="Подлёт к качалке">
+    <figcaption><span class="no">09</span><span>
+      <span class="t">Физическое становится цифровым.</span>
+      <span class="d">Качалка наполовину в голографическом каркасе, ствол уходит
+      вниз, земля стекленеет и открывает пласты с антиклиналью.</span>
+    </span></figcaption>
+  </figure>
+
+  <div class="cut hard">сборка блока · самый резкий стык</div>
+
+  <figure>
+    <img src="кадры/10_блок_в_разрезе.png" alt="Блок в разрезе">
+    <figcaption><span class="no">10</span><span>
+      <span class="t">Блок ЦД — стык со слайдом.</span>
+      <span class="d">Изометрический блок в разрезе: пласты, янтарная залежь
+      в своде, наземка сверху, циановые кромки. Дальше подхватывает
+      первый_слайд_v3.html.</span>
+    </span></figcaption>
+  </figure>
+
+</main>
+</body>
+</html>
