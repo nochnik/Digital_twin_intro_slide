@@ -20,8 +20,13 @@
 
   /* Одна лента на весь показ. Ни второго слоя, ни подмены источника —
      переключать в кадре нечего, поэтому и мигать нечему. */
+  /* Кадр приподнимается вместе с панелью, освобождая карту из-под плиты.
+     Двигается только на стоп-кадре, пока лента стоит на паузе: наложение
+     сдвига на идущее воспроизведение как раз и давало рывок. */
   #film{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;
-    background:var(--bg0)}
+    background:var(--bg0);
+    transition:transform .55s cubic-bezier(.22,.61,.36,1)}
+  #film.up{transform:translateY(-10%)}
   #vig{position:fixed;inset:0;pointer-events:none;z-index:4;
     background:
       radial-gradient(ellipse at 50% 45%,transparent 45%,rgba(5,8,16,.55) 100%),
@@ -42,18 +47,26 @@
      UPSTREAM: пять переделов со своими системами. Полосой внизу во всю
      ширину — иначе на карточки не хватает места.
      ──────────────────────────────────────────────────────────────────── */
-  #chain{position:fixed;left:0;right:0;bottom:0;z-index:6;padding:0 26px 22px;
-    opacity:0;transform:translateY(14px);transition:opacity .55s,transform .55s;
+  /* Панель лежит на собственной подложке: без неё карточки висели прямо на
+     кадре и терялись на светлой карте. Верх подложки уходит в прозрачность,
+     чтобы плита не отрезала изображение линейкой.
+     Кегли рассчитаны на просмотр с расстояния: прежние 9–11 px читались
+     только вплотную к монитору. */
+  #chain{position:fixed;left:0;right:0;bottom:0;z-index:6;padding:24px 40px 22px;
+    background:linear-gradient(to top,
+      rgba(4,7,14,.985) 0%, rgba(4,7,14,.965) 66%,
+      rgba(4,7,14,.78) 88%, rgba(4,7,14,0) 100%);
+    opacity:0;transform:translateY(100%);
+    transition:transform .75s cubic-bezier(.22,.61,.36,1),opacity .4s;
     pointer-events:none}
   #chain.on{opacity:1;transform:none}
-  #chain .hd{font-family:var(--mono);font-size:10px;letter-spacing:.26em;
-    text-transform:uppercase;color:var(--dim);margin-bottom:10px}
+  #chain .hd{font-family:var(--mono);font-size:15px;letter-spacing:.22em;
+    text-transform:uppercase;color:#9DB4CE;margin-bottom:12px}
   #chain .row{display:flex;align-items:stretch;gap:0}
   /* Карточки собираются по очереди слева направо — цепочка выстраивается,
      а не возникает целиком. */
-  #chain .card{flex:1;min-width:0;background:rgba(9,15,26,.88);
-    border-top:2px solid var(--amber);padding:13px 15px 14px;
-    backdrop-filter:blur(8px);
+  #chain .card{flex:1;min-width:0;background:rgba(11,18,30,.94);
+    border-top:3px solid var(--amber);padding:15px 18px 16px;
     opacity:0;transform:translateY(14px) scale(.97);filter:blur(3px);
     transition:opacity .45s ease-out,transform .45s ease-out,filter .45s ease-out}
   #chain.on .card{opacity:1;transform:none;filter:none}
@@ -61,35 +74,60 @@
   #chain.on .ar{opacity:1}
   /* Задержки очерёдности проставляются при сборке, а не селектором: карточки и
      стрелки идут вперемешку и все они div, поэтому nth-of-type попадал мимо. */
-  #chain .no{font-family:var(--mono);font-size:11px;color:var(--dim);
-    letter-spacing:.1em}
-  #chain .nm{font-size:15px;font-weight:600;color:#EAF2FF;margin-top:7px;
-    line-height:1.25}
-  #chain .sb{font-family:var(--mono);font-size:10px;letter-spacing:.1em;
-    text-transform:uppercase;color:var(--teal);margin-top:7px;line-height:1.4}
-  #chain .sy{font-family:var(--mono);font-size:10.5px;color:var(--viol);
-    margin-top:10px;line-height:1.4}
-  #chain .ar{flex:0 0 26px;display:flex;align-items:center;justify-content:center;
-    color:var(--dim);font-size:13px}
+  #chain .no{font-family:var(--mono);font-size:16px;color:var(--amber);
+    letter-spacing:.12em;opacity:.85}
+  #chain .nm{font-size:21px;font-weight:600;color:#F2F7FF;margin-top:9px;
+    line-height:1.2;letter-spacing:-.01em}
+  #chain .sb{font-family:var(--mono);font-size:13px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--teal);margin-top:10px;line-height:1.35}
+  #chain .sy{font-size:13.5px;color:#B79BF0;margin-top:10px;line-height:1.35}
+  #chain .ar{flex:0 0 34px;display:flex;align-items:center;justify-content:center;
+    color:#6E839C;font-size:19px}
 
   /* Под цепочкой — тот же периметр, но глазами ИТ: те же переделы, набитые
      несвязанными системами. Смысл строки в том, что единого слоя между ними
      нет, поэтому системы показаны разрозненными плашками. */
-  #chain .land{margin-top:14px}
-  #chain .land .hd2{font-family:var(--mono);font-size:10px;letter-spacing:.26em;
-    text-transform:uppercase;color:var(--dim);margin-bottom:9px}
-  #chain .land .row2{display:flex;gap:18px;align-items:flex-start}
+  /* Разделитель отбивает цепочку от ландшафта: это два разных высказывания,
+     и без черты они читались как одна каша из плашек. */
+  #chain .land{margin-top:16px;padding-top:15px;
+    border-top:1px solid rgba(140,170,210,.16)}
+  #chain .land .hd2{font-family:var(--mono);font-size:15px;letter-spacing:.22em;
+    text-transform:uppercase;color:#9DB4CE;margin-bottom:11px}
+  #chain .land .row2{display:flex;gap:26px;align-items:flex-start}
   #chain .grp{flex:1;min-width:0;
     opacity:0;transform:translateY(10px);filter:blur(2px);
     transition:opacity .4s ease-out,transform .4s ease-out,filter .4s ease-out}
   #chain.on .grp{opacity:1;transform:none;filter:none}
-  #chain .grp .gn{font-family:var(--mono);font-size:9px;letter-spacing:.14em;
-    text-transform:uppercase;color:var(--dim);margin-bottom:7px}
-  #chain .grp .chips{display:flex;flex-wrap:wrap;gap:5px}
-  #chain .chip{font-family:var(--mono);font-size:10px;line-height:1;
-    padding:5px 7px;border:1px solid rgba(140,170,210,.28);
-    color:#B9CBE2;background:rgba(12,22,38,.75);white-space:nowrap}
-  #chain .chip.abai{border-color:#3E7BD6;color:#8FBAF0;background:rgba(20,42,78,.7)}
+  #chain .grp .gn{font-family:var(--mono);font-size:12.5px;letter-spacing:.13em;
+    text-transform:uppercase;color:#8296AE;margin-bottom:8px}
+  #chain .grp .chips{display:flex;flex-wrap:wrap;gap:6px}
+  #chain .chip{font-family:var(--mono);font-size:12.5px;line-height:1;
+    padding:6px 9px;border:1px solid rgba(150,180,215,.34);
+    color:#C8D8EA;background:rgba(14,25,42,.85);white-space:nowrap}
+  #chain .chip.abai{border-color:#4E8FE8;color:#A8CBF6;background:rgba(23,50,92,.85)}
+
+  /* ── выноска на объект в кадре ────────────────────────────────────────
+     Подпись привязана к точке самой ленты, а не к углу экрана: иначе на
+     другом соотношении сторон она уедет от объекта. Координаты считаются
+     от фактического положения кадра под object-fit: cover.
+     ──────────────────────────────────────────────────────────────────── */
+  /* Сдвиг ровно на половину кружка: на точку садится он, а линия с подписью
+     уходят вправо. Центрировать всю выноску нельзя — её тянет текст. */
+  #mark{position:fixed;z-index:6;display:flex;align-items:center;
+    opacity:0;pointer-events:none;transform:translate(-17px,-50%);
+    transition:opacity .5s, top .75s cubic-bezier(.22,.61,.36,1)}
+  #mark.on{opacity:1}
+  #mark .dot{width:34px;height:34px;border:2px solid var(--cyan);border-radius:50%;
+    box-shadow:0 0 14px rgba(79,227,255,.75), inset 0 0 10px rgba(79,227,255,.35);
+    flex:0 0 auto;animation:пульс 2.4s ease-in-out infinite}
+  @keyframes пульс{0%,100%{transform:scale(1);opacity:.85}
+                   50%{transform:scale(1.14);opacity:1}}
+  #mark .ln{width:52px;height:1px;background:linear-gradient(90deg,
+    rgba(79,227,255,.9),rgba(79,227,255,.25));flex:0 0 auto}
+  #mark .tx{font-family:var(--mono);font-size:12px;letter-spacing:.12em;
+    text-transform:uppercase;color:#EAF2FF;white-space:nowrap;
+    background:rgba(8,14,26,.82);border-left:2px solid var(--cyan);
+    padding:6px 10px;backdrop-filter:blur(6px)}
 
   /* ── приглашение к следующему такту ──────────────────────────────────── */
   #go-next{position:fixed;right:44px;bottom:74px;z-index:6;display:flex;
@@ -159,6 +197,7 @@
   <div class="hd"></div><div class="row"></div>
   <div class="land"><div class="hd2"></div><div class="row2"></div></div>
 </div>
+<div id="mark"><span class="dot"></span><span class="ln"></span><span class="tx"></span></div>
 <div id="go-next"><span>дальше</span><span class="a">→</span></div>
 <div id="bar"></div>
 
@@ -167,7 +206,7 @@
 
 <div id="start">
   <div class="k">КазМунайГаз · программа цифрового двойника</div>
-  <h1>Цифровой двойник актива</h1>
+  <h1>Цифровой двойник на базе ИС ABAI</h1>
   <p>Подводка от планеты к пилотному месторождению: Казахстан → Атырауская
      область → Восточный Молдабек → объект промысла → цифровой двойник.</p>
   <button class="btn" id="go">начать показ<span>→</span></button>
@@ -201,7 +240,8 @@ const TAKES = [
   { from:0,      to:5.083,
     k:'Программа «Цифровой двойник» · целевой образ',
     t:'Цифровой двойник на базе ИС ABAI',
-    s:'Это интеллектуальная виртуальная копия производственных объектов реального мира',
+    s:'Интеллектуальная виртуальная копия производственных объектов реального мира, '
+     +'связанных по цепочке «пласт — скважина — добыча и наземная инфраструктура»',
     c:'#4FE3FF' },
 
   /* Казахстан проходим без остановки, и зум в область — тоже: три ролика
@@ -212,6 +252,9 @@ const TAKES = [
      быстрее обычного, а загорание области и зум в неё — вдвое. Отдельными
      тактами это не сделать, там вернулась бы пауза посреди движения. */
   { from:5.083,  to:11.250,
+    /* Выноска на месторождение: доли кадра замерены по самой ленте — пятно
+       выходит на место к 10,9 с и дальше стоит неподвижно до конца такта. */
+    метка:{ с:10.9, x:0.721, y:0.460, текст:'Восточный Молдабек' },
     цепочка:{
       с:9.9,                        // выходит под конец такта, когда область уже развёрнута
       шапка:'Цепочка создания ценности UPSTREAM',
@@ -239,23 +282,24 @@ const TAKES = [
     },
     c:'#F0AE4A' },
 
+  /* От пилотного актива до блока двойника — один непрерывный прогон без
+     остановок: спуск к промыслу, карта объектов, выбор скважины и переход
+     в цифровое читаются как одно движение, дробить его паузами незачем.
+     Подпись держится всё это время. */
   { from:11.250, to:16.458,
-    k:'Пилот выбран',
-    t:'Восточный Молдабек',
-    s:'Кызылкогинский район · разработка с 1968 года',
+    k:'Пилот проекта',
+    t:'АО «Эмбамунайгаз» · Восточный Молдабек',
     c:'#4FE3FF' },
 
-  /* Три такта идут без подписей: спуск к промыслу, карта объектов и выбор
-     скважины говорят сами за себя, а речь докладчика не должна конкурировать
-     с текстом на экране. */
-  { from:16.458, to:21.583, c:'#4FE3FF' },
-  { from:21.583, to:26.750, c:'#35D0C2' },
-  { from:26.750, to:31.917, c:'#4FE3FF' },
-
-  { from:31.917, to:37.10,
-    k:'Физическое становится цифровым',
-    t:'Цифровой двойник',
-    s:'Четыре контура: пласт · скважина · добыча и наземка · ресурсная база',
+  /* Последний прогон идёт без остановок: промысел, карта объектов, скважина и
+     переход в цифровое — одно движение. Подпись не ждёт конца такта, а всплывает
+     по ходу, на блоке двойника, и дальше держится до самого финала. */
+  { from:16.458, to:37.10,
+    титр:{ с:31.917,
+      k:'Целевой образ',
+      t:'Цифровой двойник месторождения',
+      s:'Три контура: пласт · скважина · добыча и наземная инфраструктура',
+      c:'#9B7BE8' },
     c:'#9B7BE8' },
 ];
 
@@ -264,7 +308,7 @@ const EPS = 0.03;                       // допуск сравнения вр�
 
 const $ = s => document.querySelector(s);
 const film = $('#film'), cap = $('#cap'), bar = $('#bar'),
-      slide = $('#slide'), nudge = $('#go-next'), chain = $('#chain');
+      slide = $('#slide'), nudge = $('#go-next'), chain = $('#chain'), mark = $('#mark');
 
 TAKES.forEach(() => bar.appendChild(document.createElement('i')));
 const ticks = [...bar.children];
@@ -273,19 +317,37 @@ let take = -1;
 let phase = 'idle';                     // idle | play | hold | done
 let raf = 0;
 let форсаж = false;      // такт доводится ускорением по нажатию — расписание скоростей молчит
+let опускается = false;  // идёт возврат панели и кадра, следующий такт ждёт его конца
 
 /* ── титры ───────────────────────────────────────────────────────────── */
-function showCap(t){
+/* Подпись принимает любой источник — сам такт или его всплывающий титр.
+   Токен отсекает отложенный показ, если такт успели сменить. */
+let титрТокен = 0;
+
+function showCap(о){
   cap.classList.remove('on');
-  if (t.цепочка || !t.t) return;  // такт с панелью цепочки или вовсе без подписи
+  cap.dataset.тек = '';
+  титрТокен++;
+  if (!о || о.цепочка || !о.t) return;   // панель цепочки или такт без подписи
+  const мой = титрТокен;
+  cap.dataset.тек = о.t;
   setTimeout(() => {
-    if (TAKES[take] !== t) return;
-    cap.style.setProperty('--cc', t.c);
-    cap.querySelector('.k').textContent = t.k;
-    cap.querySelector('.t').textContent = t.t;
-    cap.querySelector('.s').textContent = t.s;
+    if (мой !== титрТокен) return;
+    cap.style.setProperty('--cc', о.c);
+    cap.querySelector('.k').textContent = о.k || '';
+    cap.querySelector('.t').textContent = о.t || '';
+    cap.querySelector('.s').textContent = о.s || '';
     cap.classList.add('on');
   }, 200);
+}
+
+/* Подпись, привязанная к моменту внутри такта: выходит по ходу движения и
+   не требует остановки — такт при этом доигрывает как обычно. */
+function обновитьТитр(t, время){
+  if (!t.титр) return;
+  const пора = время >= t.титр.с - EPS;
+  if (пора  && cap.dataset.тек !== t.титр.t) showCap(t.титр);
+  if (!пора && cap.dataset.тек === t.титр.t) showCap(null);
 }
 
 function fillTicks(upto){
@@ -312,13 +374,44 @@ function скоростьТакта(t, время){
   return r;
 }
 
-/* Ближайшее событие внутри такта: смена скорости или выход панели цепочки. */
+/* Ближайшее событие внутри такта: смена скорости, панель цепочки, выноска. */
 function следующаяСмена(t, время){
   const когда = [];
   for (const [с] of (t.ускорение || [])) if (с > время + EPS) когда.push(с);
-  if (t.цепочка && t.цепочка.с > время + EPS) когда.push(t.цепочка.с);
+  if (t.метка   && t.метка.с   > время + EPS) когда.push(t.метка.с);
+  if (t.титр    && t.титр.с    > время + EPS) когда.push(t.титр.с);
   return когда.length ? Math.min(...когда) : null;
 }
+
+/* ── выноска на объект ────────────────────────────────────────────────
+   Лента растянута по `object-fit: cover`, поэтому доли кадра нельзя класть
+   прямо в проценты экрана: на не-16:9 часть кадра обрезана, и подпись уедет
+   от объекта. Считаем фактический прямоугольник ленты и ставим точку в нём.
+   ──────────────────────────────────────────────────────────────────── */
+function поставитьМетку(м){
+  const вш = innerWidth, вв = innerHeight;
+  const кадр = (film.videoWidth || 1920) / (film.videoHeight || 1080);
+  let ш, в;
+  if (вш / вв > кадр){ ш = вш; в = вш / кадр; }   // упирается в ширину
+  else               { в = вв; ш = вв * кадр; }   // упирается в высоту
+  // лента может быть поднята под панель — выноска обязана ехать вместе с ней,
+  // иначе оторвётся от объекта. Сдвиг задан в процентах от высоты элемента.
+  const подъём = film.classList.contains('up') ? вв * 0.10 : 0;
+  mark.style.left = ((вш - ш) / 2 + м.x * ш) + 'px';
+  mark.style.top  = ((вв - в) / 2 + м.y * в - подъём) + 'px';
+}
+
+function обновитьМетку(t, время){
+  if (!t.метка){ mark.classList.remove('on'); return; }
+  mark.querySelector('.tx').textContent = t.метка.текст;
+  поставитьМетку(t.метка);
+  mark.classList.toggle('on', время >= t.метка.с - EPS);
+}
+
+addEventListener('resize', () => {
+  const t = TAKES[take];
+  if (t && t.метка && mark.classList.contains('on')) поставитьМетку(t.метка);
+});
 
 /* ── панель цепочки ───────────────────────────────────────────────────
    Собирается один раз на такт и выходит не в его начале, а под конец —
@@ -375,12 +468,24 @@ function собратьЦепочку(ц){
   });
 }
 
-function обновитьЦепочку(t, время){
-  if (!t.цепочка){ chain.classList.remove('on'); return; }
+/* Панель — отдельный шаг внутри такта, а не событие по времени.
+   Такт доигрывает и замирает на чистом кадре области; первое нажатие
+   поднимает панель, второе уводит её вниз и сразу переключает такт. */
+function цепочкуНаЭкран(t, показать){
+  if (!t || !t.цепочка){
+    chain.classList.remove('on');
+    nudge.style.bottom = '';
+    return;
+  }
   собратьЦепочку(t.цепочка);
-  const пора = время >= (t.цепочка.с ?? t.from) - EPS;
-  chain.classList.toggle('on', пора);
+  chain.classList.toggle('on', показать);
+  film.classList.toggle('up', показать);      // кадр идёт вместе с панелью
+  if (t.метка) поставитьМетку(t.метка);       // выноска обязана ехать за кадром
+  // панель занимает низ экрана — подсказку «дальше» уводим над ней
+  nudge.style.bottom = показать ? (chain.offsetHeight + 20) + 'px' : '';
 }
+
+const цепочкаПоднята = () => chain.classList.contains('on');
 
 function armBoundary(){
   clearTimeout(boundary);
@@ -391,7 +496,8 @@ function armBoundary(){
   const нужнаяСкорость = скоростьТакта(t, сейчас);
   if (Math.abs(film.playbackRate - нужнаяСкорость) > 0.01 && !форсаж)
     film.playbackRate = нужнаяСкорость;
-  обновитьЦепочку(t, сейчас);
+  обновитьМетку(t, сейчас);
+  обновитьТитр(t, сейчас);
 
   // ждём того, что наступит раньше: смены скорости или конца такта
   const смена = следующаяСмена(t, сейчас);
@@ -455,6 +561,7 @@ function playTake(idx, { seek = false } = {}){
   if (seek || Math.abs(film.currentTime - t.from) > 0.25) film.currentTime = t.from;
 
   форсаж = false;
+  цепочкуНаЭкран(t, false);       // новый такт всегда начинается без панели
   film.playbackRate = скоростьТакта(t, film.currentTime);
   // Если данных ещё не хватило, браузер отклоняет play(). Молча проглотить
   // нельзя: показ тогда просто не тронется с места. Ждём готовности и пробуем
@@ -495,6 +602,25 @@ function forward(){
     return;
   }
 
+  /* Такт с панелью проходится в два нажатия. Первое — область стоит чистой,
+     панель поднимается снизу и приподнимает кадр. Второе — панель с кадром
+     возвращаются, и только по завершении этого движения идёт следующий такт:
+     если тронуть ленту сразу, сдвиг наложится на воспроизведение и картинка
+     дёрнется. Пока идёт возврат, лента стоит на паузе. */
+  const т = TAKES[take];
+  if (т && т.цепочка){
+    if (!цепочкаПоднята()){ цепочкуНаЭкран(т, true); return; }
+    if (опускается) return;                 // не даём нажать дважды за возврат
+    опускается = true;
+    цепочкуНаЭкран(т, false);
+    setTimeout(() => {
+      опускается = false;
+      if (take + 1 < TAKES.length) playTake(take + 1);
+      else finale();
+    }, 560);
+    return;
+  }
+
   if (take + 1 < TAKES.length) playTake(take + 1);
   else finale();
 }
@@ -502,6 +628,8 @@ function forward(){
 /* ── назад ───────────────────────────────────────────────────────────── */
 function backward(){
   if (phase === 'done' || phase === 'idle') return;
+  // поднятая панель — сначала убираем её, такт при этом остаётся на месте
+  if (цепочкаПоднята()){ цепочкуНаЭкран(TAKES[take], false); return; }
   // с середины такта — в его начало, с паузы — на такт раньше
   const to = (phase === 'play' && film.currentTime - TAKES[take].from > 0.6)
     ? take : take - 1;
@@ -521,12 +649,13 @@ function finale(){
   fillTicks(TAKES.length);
   cap.classList.remove('on');
   chain.classList.remove('on');
+  mark.classList.remove('on');
   nudge.classList.remove('on');
   // будим слайд: всю подводку он рендерил редко, чтобы не отбирать кадры у ленты
   try { slide.contentWindow.postMessage('слайд:показать', '*'); } catch(_){}
   slide.classList.add('on');
   setTimeout(() => {
-    ['#cap','#chain','#bar','#skip','#go-next'].forEach(s => $(s).style.display = 'none');
+    ['#cap','#chain','#mark','#bar','#skip','#go-next'].forEach(s => $(s).style.display = 'none');
     $('#tov1').style.display = 'inline-flex';   // на её место встаёт уход на слайд
   }, 1100);
 }

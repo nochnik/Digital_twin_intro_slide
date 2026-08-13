@@ -184,7 +184,10 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var
 </div>
 
 <div id="hint">Вращение — мышь · наведите на слой модели или список слева</div>
-<a id="next" href="https://znewk.github.io/kmg-digital-twin-presentation/">2 часть<span class="arw">→</span></a>
+<!-- target="_top": слайд открывается ещё и внутри demo_with_map.html, и без
+     этого вторая часть грузилась бы в рамку, будто она часть нашего показа -->
+<a id="next" target="_top" rel="noopener"
+   href="https://znewk.github.io/kmg-digital-twin-presentation/">2 часть<span class="arw">→</span></a>
 <a id="demo2" href="demo_with_map.html">Демо показа v2<span class="arw">→</span></a>
 <!-- слайд открыт внутри demo_with_map.html — кнопка вела бы саму в себя -->
 <script>if (window.self !== window.top) document.getElementById('demo2').remove();</script>
@@ -400,9 +403,8 @@ async function build(){
     r.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(r);
     const size = box.getSize(new THREE.Vector3());
-    const FIX = { naz:1.0, skv:1.05 }[id] || 1.0;
-    const sX = FOOT / size.x * FIX;
-    const sZ = DEPTH / size.z * FIX;
+    const sX = FOOT / size.x;
+    const sZ = DEPTH / size.z;
     const sY = (id === 'naz') ? (sX+sZ)/2 : (TARGET_H[id] ? TARGET_H[id]/size.y : 1);
     meta[id] = { r, box, size, sX, sZ, sY, h: (id==='naz' ? size.y*sY : (TARGET_H[id] || 0)) };
   }
@@ -457,7 +459,10 @@ async function build(){
         rot.add(inner);
         const outer = new THREE.Group();
         outer.add(rot);
-        outer.scale.set(FOOT/M.size.z*1.05, M.sY, DEPTH/M.size.x*1.05);
+        // Оси меняются местами из-за поворота, поэтому ширина считается по
+        // size.z, а глубина по size.x. Множителя тут быть не должно: слой
+        // вылезал на 5% за собственную голограмму и за соседние плиты.
+        outer.scale.set(FOOT/M.size.z, M.sY, DEPTH/M.size.x);
         outer.position.set(0, yb - M.box.min.y*M.sY, 0);
         z.scaleG.add(outer);
       } else {
@@ -698,7 +703,9 @@ function showIntro(){
   $('p-blocks').innerHTML = '';
   $('p-h-blocks').style.display = 'none';
   $('p-mods').innerHTML = ['ЦД пласта','ЦД скважины','ЦД добычи и наземной инфраструктуры'].map(m => `<span class="mod">${m}</span>`).join('');
-  $('p-note').textContent = 'ЦД ресурсной базы (ГРР) — контур 2027 года, будет добавлен после уточнения периметра.';
+  // Сноска про ЦД ресурсной базы снята: по сценарию демонстрации двойник
+  // месторождения состоит из трёх контуров, ГРР в периметр показа не входит.
+  $('p-note').textContent = '';
   $('panel').classList.add('vis');
 }
 
