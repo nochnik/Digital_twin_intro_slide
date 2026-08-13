@@ -106,6 +106,44 @@
     color:#C8D8EA;background:rgba(14,25,42,.85);white-space:nowrap}
   #chain .chip.abai{border-color:#4E8FE8;color:#A8CBF6;background:rgba(23,50,92,.85)}
 
+  /* ── эффекты по контурам ──────────────────────────────────────────────
+     Стоит справа вертикально: блок изображения занимает левую половину кадра,
+     и горизонтальная полоса внизу перекрыла бы сам двойник. Выходит на самом
+     финале, когда говорить о цифрах уже уместно.
+     ──────────────────────────────────────────────────────────────────── */
+  #effects{position:fixed;right:34px;top:5.5%;width:38%;max-height:89%;z-index:6;
+    padding:22px 26px 20px;overflow:hidden;
+    background:linear-gradient(180deg,rgba(6,11,20,.96),rgba(4,8,15,.985));
+    border:1px solid rgba(140,170,210,.16);
+    opacity:0;transform:translateX(40px);
+    transition:opacity .5s,transform .6s cubic-bezier(.22,.61,.36,1);
+    pointer-events:none}
+  #effects.on{opacity:1;transform:none}
+  #effects .hd{font-family:var(--mono);font-size:13.5px;letter-spacing:.24em;
+    text-transform:uppercase;color:var(--amber);margin-bottom:16px}
+
+  #effects .ct{border-top:2px solid var(--amber);padding:12px 0 14px;
+    opacity:0;transform:translateY(10px);
+    transition:opacity .4s ease-out,transform .4s ease-out}
+  #effects.on .ct{opacity:1;transform:none}
+  #effects .ct .nm{font-family:var(--mono);font-size:14px;letter-spacing:.1em;
+    text-transform:uppercase;color:#F2F7FF;font-weight:600}
+  #effects .fx{display:flex;align-items:baseline;gap:10px;margin-top:9px}
+  #effects .fx .v{font-family:var(--mono);font-size:27px;color:var(--teal);
+    line-height:1;flex:0 0 auto}
+  #effects .fx .l{font-size:14px;color:#9DB4CE;line-height:1.3}
+
+  /* Дорожная карта отделена: это уже не эффект, а сроки */
+  #effects .road{margin-top:16px;padding-top:16px;
+    border-top:1px solid rgba(140,170,210,.16)}
+  #effects .rd{border-left:2px solid var(--cyan);padding:2px 0 2px 12px;
+    margin-bottom:12px;
+    opacity:0;transform:translateY(10px);
+    transition:opacity .4s ease-out,transform .4s ease-out}
+  #effects.on .rd{opacity:1;transform:none}
+  #effects .rd .v{font-family:var(--mono);font-size:19px;color:#EAF2FF;line-height:1.1}
+  #effects .rd .l{font-size:13px;color:#8296AE;margin-top:4px;line-height:1.3}
+
   /* ── выноска на объект в кадре ────────────────────────────────────────
      Подпись привязана к точке самой ленты, а не к углу экрана: иначе на
      другом соотношении сторон она уедет от объекта. Координаты считаются
@@ -179,6 +217,24 @@
   #start .load{font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;
     text-transform:uppercase;color:var(--dim);opacity:.7;height:12px}
 
+  /* Переключатель финальной панели: на части показов цифры называет докладчик,
+     и выводить их на экран не нужно. Решение принимается до старта. */
+  #fx-sw{display:inline-flex;align-items:center;gap:10px;cursor:pointer;
+    font-family:var(--mono);font-size:10px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--dim);user-select:none;
+    transition:color .25s}
+  #fx-sw:hover{color:#B9CBE2}
+  #fx-sw input{position:absolute;opacity:0;pointer-events:none}
+  #fx-sw .sw{width:34px;height:18px;border:1px solid var(--line);
+    background:rgba(10,18,32,.6);position:relative;flex:0 0 auto;
+    transition:border-color .25s,background .25s}
+  #fx-sw .sw::after{content:'';position:absolute;top:2px;left:2px;
+    width:12px;height:12px;background:var(--dim);
+    transition:transform .25s,background .25s}
+  #fx-sw input:checked + .sw{border-color:var(--cyan);background:rgba(79,227,255,.12)}
+  #fx-sw input:checked + .sw::after{transform:translateX(16px);background:var(--cyan)}
+  #fx-sw input:focus-visible + .sw{outline:1px solid var(--cyan);outline-offset:2px}
+
   /* ── живой слайд: грузится под лентой с начала показа ────────────────── */
   #slide{position:fixed;inset:0;width:100%;height:100%;border:0;z-index:15;
     opacity:0;pointer-events:none;transition:opacity .9s ease-in}
@@ -198,6 +254,7 @@
   <div class="land"><div class="hd2"></div><div class="row2"></div></div>
 </div>
 <div id="mark"><span class="dot"></span><span class="ln"></span><span class="tx"></span></div>
+<div id="effects"><div class="hd"></div><div class="body"></div><div class="road"></div></div>
 <div id="go-next"><span>дальше</span><span class="a">→</span></div>
 <div id="bar"></div>
 
@@ -211,6 +268,8 @@
      область → Восточный Молдабек → объект промысла → цифровой двойник.</p>
   <button class="btn" id="go">начать показ<span>→</span></button>
   <div class="load" id="load"></div>
+  <label id="fx-sw"><input type="checkbox" checked><span class="sw"></span>
+    <span class="lb">эффекты по контурам в финале</span></label>
   <div class="hint">такт вперёд: → · enter · пробел · клик<br>
     такт назад: ← · backspace &nbsp;·&nbsp; esc — сразу к двойнику · f — полный экран</div>
 </div>
@@ -300,6 +359,23 @@ const TAKES = [
       t:'Цифровой двойник месторождения',
       s:'Три контура: пласт · скважина · добыча и наземная инфраструктура',
       c:'#9B7BE8' },
+    /* Цифры выходят последними, у самой границы такта: сначала зритель видит
+       собранный двойник, и только потом — что он даёт. */
+    эффекты:{ с:36.7,
+      шапка:'Ожидаемые эффекты по контурам',
+      контуры:[
+        ['ЦД пласта',   [['−5%','снижение CAPEX']]],
+        ['ЦД скважины', [['−3%','сроки вывода на режим']]],
+        ['ЦД добычи и наземной инфраструктуры',
+                        [['−5%','управляемые потери добычи'],
+                         ['−3%','CAPEX/OPEX инфраструктуры']]],
+      ],
+      итоги:[
+        ['окт. 2026', 'промышленная эксплуатация пилота Молдабек В.'],
+        ['12',        'приоритетных активов, 7 ДЗО — 2027–2028'],
+        ['100%',      'добывающих активов к 2028 году'],
+      ],
+    },
     c:'#9B7BE8' },
 ];
 
@@ -308,7 +384,7 @@ const EPS = 0.03;                       // допуск сравнения вр�
 
 const $ = s => document.querySelector(s);
 const film = $('#film'), cap = $('#cap'), bar = $('#bar'),
-      slide = $('#slide'), nudge = $('#go-next'), chain = $('#chain'), mark = $('#mark');
+      slide = $('#slide'), nudge = $('#go-next'), chain = $('#chain'), mark = $('#mark'), effects = $('#effects');
 
 TAKES.forEach(() => bar.appendChild(document.createElement('i')));
 const ticks = [...bar.children];
@@ -339,6 +415,57 @@ function showCap(о){
     cap.querySelector('.s').textContent = о.s || '';
     cap.classList.add('on');
   }, 200);
+}
+
+/* ── панель эффектов ──────────────────────────────────────────────────
+   Собирается один раз на такт, выходит справа у самой его границы.
+   Блоки всплывают по очереди сверху вниз, как карточки цепочки.
+   ──────────────────────────────────────────────────────────────────── */
+function собратьЭффекты(э){
+  if (effects.dataset.готово === э.шапка) return;
+  effects.dataset.готово = э.шапка;
+  effects.querySelector('.hd').textContent = э.шапка;
+
+  const тело = effects.querySelector('.body');
+  тело.textContent = '';
+  э.контуры.forEach(([имя, строки], i) => {
+    const к = document.createElement('div');
+    к.className = 'ct';
+    к.style.transitionDelay = (i * 0.09 + 0.05).toFixed(2) + 's';
+    const н = document.createElement('div');
+    н.className = 'nm'; н.textContent = имя;
+    к.appendChild(н);
+    for (const [знач, подпись] of строки){
+      const ф = document.createElement('div');
+      ф.className = 'fx';
+      const v = document.createElement('span'); v.className = 'v'; v.textContent = знач;
+      const l = document.createElement('span'); l.className = 'l'; l.textContent = подпись;
+      ф.append(v, l);
+      к.appendChild(ф);
+    }
+    тело.appendChild(к);
+  });
+
+  const дорога = effects.querySelector('.road');
+  дорога.textContent = '';
+  э.итоги.forEach(([знач, подпись], i) => {
+    const р = document.createElement('div');
+    р.className = 'rd';
+    р.style.transitionDelay = (i * 0.08 + 0.34).toFixed(2) + 's';
+    const v = document.createElement('div'); v.className = 'v'; v.textContent = знач;
+    const l = document.createElement('div'); l.className = 'l'; l.textContent = подпись;
+    р.append(v, l);
+    дорога.appendChild(р);
+  });
+}
+
+// переключатель на стартовом экране: показывать ли цифры в финале
+const эффектыВключены = () => $('#fx-sw input').checked;
+
+function обновитьЭффекты(t, время){
+  if (!t.эффекты || !эффектыВключены()){ effects.classList.remove('on'); return; }
+  собратьЭффекты(t.эффекты);
+  effects.classList.toggle('on', время >= t.эффекты.с - EPS);
 }
 
 /* Подпись, привязанная к моменту внутри такта: выходит по ходу движения и
@@ -380,6 +507,7 @@ function следующаяСмена(t, время){
   for (const [с] of (t.ускорение || [])) if (с > время + EPS) когда.push(с);
   if (t.метка   && t.метка.с   > время + EPS) когда.push(t.метка.с);
   if (t.титр    && t.титр.с    > время + EPS) когда.push(t.титр.с);
+  if (t.эффекты && t.эффекты.с > время + EPS) когда.push(t.эффекты.с);
   return когда.length ? Math.min(...когда) : null;
 }
 
@@ -498,6 +626,7 @@ function armBoundary(){
     film.playbackRate = нужнаяСкорость;
   обновитьМетку(t, сейчас);
   обновитьТитр(t, сейчас);
+  обновитьЭффекты(t, сейчас);
 
   // ждём того, что наступит раньше: смены скорости или конца такта
   const смена = следующаяСмена(t, сейчас);
@@ -650,12 +779,13 @@ function finale(){
   cap.classList.remove('on');
   chain.classList.remove('on');
   mark.classList.remove('on');
+  effects.classList.remove('on');
   nudge.classList.remove('on');
   // будим слайд: всю подводку он рендерил редко, чтобы не отбирать кадры у ленты
   try { slide.contentWindow.postMessage('слайд:показать', '*'); } catch(_){}
   slide.classList.add('on');
   setTimeout(() => {
-    ['#cap','#chain','#mark','#bar','#skip','#go-next'].forEach(s => $(s).style.display = 'none');
+    ['#cap','#chain','#mark','#effects','#bar','#skip','#go-next'].forEach(s => $(s).style.display = 'none');
     $('#tov1').style.display = 'inline-flex';   // на её место встаёт уход на слайд
   }, 1100);
 }
@@ -704,6 +834,20 @@ function начать(){
   if (phase !== 'idle') return;        // оба сторожа готовности могут сработать
   $('#start').classList.add('gone');
   playTake(0, { seek:true });
+}
+
+/* Выбор запоминается: показ обычно гоняют несколько раз подряд, и выставлять
+   переключатель заново после каждой перезагрузки — лишний шанс забыть. */
+{
+  const кл = $('#fx-sw input');
+  try {
+    const было = localStorage.getItem('эффекты');
+    if (было !== null) кл.checked = было === '1';
+  } catch(_){}
+  кл.addEventListener('change', () => {
+    try { localStorage.setItem('эффекты', кл.checked ? '1' : '0'); } catch(_){}
+  });
+  $('#fx-sw').addEventListener('click', e => e.stopPropagation());
 }
 
 $('#go').addEventListener('click', e => {
