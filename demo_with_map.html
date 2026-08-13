@@ -37,6 +37,60 @@
     line-height:1.14;margin-top:8px}
   #cap .s{font-size:14px;color:var(--dim);margin-top:9px;line-height:1.5}
 
+  /* ── панель цепочки создания ценности ─────────────────────────────────
+     Такт «Эмбамунайгаз» несёт не подпись из трёх строк, а всю цепочку
+     UPSTREAM: пять переделов со своими системами. Полосой внизу во всю
+     ширину — иначе на карточки не хватает места.
+     ──────────────────────────────────────────────────────────────────── */
+  #chain{position:fixed;left:0;right:0;bottom:0;z-index:6;padding:0 26px 22px;
+    opacity:0;transform:translateY(14px);transition:opacity .55s,transform .55s;
+    pointer-events:none}
+  #chain.on{opacity:1;transform:none}
+  #chain .hd{font-family:var(--mono);font-size:10px;letter-spacing:.26em;
+    text-transform:uppercase;color:var(--dim);margin-bottom:10px}
+  #chain .row{display:flex;align-items:stretch;gap:0}
+  /* Карточки собираются по очереди слева направо — цепочка выстраивается,
+     а не возникает целиком. */
+  #chain .card{flex:1;min-width:0;background:rgba(9,15,26,.88);
+    border-top:2px solid var(--amber);padding:13px 15px 14px;
+    backdrop-filter:blur(8px);
+    opacity:0;transform:translateY(14px) scale(.97);filter:blur(3px);
+    transition:opacity .45s ease-out,transform .45s ease-out,filter .45s ease-out}
+  #chain.on .card{opacity:1;transform:none;filter:none}
+  #chain .ar{opacity:0;transition:opacity .3s ease-out}
+  #chain.on .ar{opacity:1}
+  /* Задержки очерёдности проставляются при сборке, а не селектором: карточки и
+     стрелки идут вперемешку и все они div, поэтому nth-of-type попадал мимо. */
+  #chain .no{font-family:var(--mono);font-size:11px;color:var(--dim);
+    letter-spacing:.1em}
+  #chain .nm{font-size:15px;font-weight:600;color:#EAF2FF;margin-top:7px;
+    line-height:1.25}
+  #chain .sb{font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--teal);margin-top:7px;line-height:1.4}
+  #chain .sy{font-family:var(--mono);font-size:10.5px;color:var(--viol);
+    margin-top:10px;line-height:1.4}
+  #chain .ar{flex:0 0 26px;display:flex;align-items:center;justify-content:center;
+    color:var(--dim);font-size:13px}
+
+  /* Под цепочкой — тот же периметр, но глазами ИТ: те же переделы, набитые
+     несвязанными системами. Смысл строки в том, что единого слоя между ними
+     нет, поэтому системы показаны разрозненными плашками. */
+  #chain .land{margin-top:14px}
+  #chain .land .hd2{font-family:var(--mono);font-size:10px;letter-spacing:.26em;
+    text-transform:uppercase;color:var(--dim);margin-bottom:9px}
+  #chain .land .row2{display:flex;gap:18px;align-items:flex-start}
+  #chain .grp{flex:1;min-width:0;
+    opacity:0;transform:translateY(10px);filter:blur(2px);
+    transition:opacity .4s ease-out,transform .4s ease-out,filter .4s ease-out}
+  #chain.on .grp{opacity:1;transform:none;filter:none}
+  #chain .grp .gn{font-family:var(--mono);font-size:9px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--dim);margin-bottom:7px}
+  #chain .grp .chips{display:flex;flex-wrap:wrap;gap:5px}
+  #chain .chip{font-family:var(--mono);font-size:10px;line-height:1;
+    padding:5px 7px;border:1px solid rgba(140,170,210,.28);
+    color:#B9CBE2;background:rgba(12,22,38,.75);white-space:nowrap}
+  #chain .chip.abai{border-color:#3E7BD6;color:#8FBAF0;background:rgba(20,42,78,.7)}
+
   /* ── приглашение к следующему такту ──────────────────────────────────── */
   #go-next{position:fixed;right:44px;bottom:74px;z-index:6;display:flex;
     align-items:center;gap:11px;font-family:var(--mono);font-size:10px;
@@ -101,6 +155,10 @@
 <div id="vig"></div>
 
 <div id="cap"><div class="k"></div><div class="t"></div><div class="s"></div></div>
+<div id="chain">
+  <div class="hd"></div><div class="row"></div>
+  <div class="land"><div class="hd2"></div><div class="row2"></div></div>
+</div>
 <div id="go-next"><span>дальше</span><span class="a">→</span></div>
 <div id="bar"></div>
 
@@ -148,11 +206,38 @@ const TAKES = [
 
   /* Казахстан проходим без остановки, и зум в область — тоже: три ролика
      подряд одним тактом. Останавливаться на «область только что загорелась»
-     нельзя — на этих словах она должна быть уже развёрнута крупно. */
+     нельзя — на этих словах она должна быть уже развёрнута крупно.
+
+     Скорость внутри такта меняется: подлёт к стране идёт в полтора раза
+     быстрее обычного, а загорание области и зум в неё — вдвое. Отдельными
+     тактами это не сделать, там вернулась бы пауза посреди движения. */
   { from:5.208,  to:23.5,   rate:1.5,
-    k:'Пилот программы',
-    t:'АО «Эмбамунайгаз»',
-    s:'Атырауская область · месторождения пилотного периметра',
+    ускорение:[[10.333, 2]],
+    цепочка:{
+      с:20.8,                       // выходит под конец такта, когда область уже развёрнута
+      шапка:'Цепочка создания ценности UPSTREAM',
+      звенья:[
+        ['01','Геология и геологоразведка','коммерчески извлекаемые запасы','t-Navigator, Petrel'],
+        ['02','Разработка месторождений','стратегия разработки','ABAI ЦРНС 2.0'],
+        ['03','Бурение и ВСР','ввод новых мощностей','ABAI Цифровое бурение'],
+        ['04','Добыча','управление добычей','ABAI Планирование добычи и мониторинг 2.0'],
+        ['05','КС и наземная инфраструктура','проектирование новых мощностей','ABAI Наземная инфраструктура'],
+      ],
+      ландшафт:{
+        шапка:'Инженерный ИТ-ландшафт · 38 систем, единого слоя между ними нет',
+        группы:[
+          ['Геология и ГРР',        ['Petrel','Techlog','tNavigator','PVTi','PVTSim','Kingdom',
+                                     'Hampson Russel','ABAI (БД)']],
+          ['Разработка',            ['Petrel','tNavigator','Eclipse','OFM','ABAI (УЗ)','ABAI (ТР)',
+                                     'ABAI (ПиАГТМ)','ABAI (БД)']],
+          ['КС и наземная инфр-ра', ['UniSim','АСУ НСИ','SAP','Procu']],
+          ['Бурение и ВСР',         ['Petrel','Landmark','tNavigator','Starsteer','ДЭЛ-140/150',
+                                     'SAP ERP','СЭД','ABAI (БД, ПГНО, ПДИМ)']],
+          ['Добыча',                ['UniSim','СДМО','ИСУТО','ИМ','АСКУЭ','АСТУЭ',
+                                     'SCADA','SAP ERP','Procu','ABAI (БД)']],
+        ],
+      },
+    },
     c:'#F0AE4A' },
 
   { from:23.5,   to:28.708, rate:1,
@@ -161,23 +246,12 @@ const TAKES = [
     s:'Кызылкогинский район · разработка с 1968 года',
     c:'#4FE3FF' },
 
-  { from:28.708, to:33.833, rate:1,
-    k:'Границы пилота',
-    t:'Промысел',
-    s:'До 30 скважин ШГН и УЭВН · 5 кустовых площадок · 1 объект подготовки',
-    c:'#4FE3FF' },
-
-  { from:33.833, to:39,     rate:1,
-    k:'Карта объектов',
-    t:'Наземная инфраструктура',
-    s:'Нефтесбор · ЦППН · факел · КНС · подстанция · ВЛ',
-    c:'#35D0C2' },
-
-  { from:39,     to:44.208, rate:1,
-    k:'Объект выбран',
-    t:'Скважина с ШГН',
-    s:'Параметры, режим, привязанные модули — по клику',
-    c:'#4FE3FF' },
+  /* Три такта идут без подписей: спуск к промыслу, карта объектов и выбор
+     скважины говорят сами за себя, а речь докладчика не должна конкурировать
+     с текстом на экране. */
+  { from:28.708, to:33.833, rate:1, c:'#4FE3FF' },
+  { from:33.833, to:39,     rate:1, c:'#35D0C2' },
+  { from:39,     to:44.208, rate:1, c:'#4FE3FF' },
 
   { from:44.208, to:49.33,  rate:1,
     k:'Физическое становится цифровым',
@@ -191,7 +265,7 @@ const EPS = 0.03;                       // допуск сравнения вр�
 
 const $ = s => document.querySelector(s);
 const film = $('#film'), cap = $('#cap'), bar = $('#bar'),
-      slide = $('#slide'), nudge = $('#go-next');
+      slide = $('#slide'), nudge = $('#go-next'), chain = $('#chain');
 
 TAKES.forEach(() => bar.appendChild(document.createElement('i')));
 const ticks = [...bar.children];
@@ -199,11 +273,14 @@ const ticks = [...bar.children];
 let take = -1;
 let phase = 'idle';                     // idle | play | hold | done
 let raf = 0;
+let форсаж = false;      // такт доводится ускорением по нажатию — расписание скоростей молчит
 
 /* ── титры ───────────────────────────────────────────────────────────── */
 function showCap(t){
   cap.classList.remove('on');
+  if (t.цепочка || !t.t) return;  // такт с панелью цепочки или вовсе без подписи
   setTimeout(() => {
+    if (TAKES[take] !== t) return;
     cap.style.setProperty('--cc', t.c);
     cap.querySelector('.k').textContent = t.k;
     cap.querySelector('.t').textContent = t.t;
@@ -228,17 +305,109 @@ function fillTicks(upto){
    ──────────────────────────────────────────────────────────────────── */
 let boundary = 0;
 
+/* Скорость на текущем месте такта. Такт может ускоряться по ходу: список
+   `ускорение` задаёт, с какой секунды ленты действует новая скорость. */
+function скоростьТакта(t, время){
+  let r = t.rate || 1;
+  for (const [с, скор] of (t.ускорение || [])) if (время >= с - EPS) r = скор;
+  return r;
+}
+
+/* Ближайшее событие внутри такта: смена скорости или выход панели цепочки. */
+function следующаяСмена(t, время){
+  const когда = [];
+  for (const [с] of (t.ускорение || [])) if (с > время + EPS) когда.push(с);
+  if (t.цепочка && t.цепочка.с > время + EPS) когда.push(t.цепочка.с);
+  return когда.length ? Math.min(...когда) : null;
+}
+
+/* ── панель цепочки ───────────────────────────────────────────────────
+   Собирается один раз на такт и выходит не в его начале, а под конец —
+   когда область на ленте уже развёрнута и в кадре есть куда её положить.
+   ──────────────────────────────────────────────────────────────────── */
+function собратьЦепочку(ц){
+  if (chain.dataset.готово === ц.шапка) return;
+  chain.dataset.готово = ц.шапка;
+  chain.querySelector('.hd').textContent = ц.шапка;
+  const ряд = chain.querySelector('.row');
+  ряд.textContent = '';
+  ц.звенья.forEach(([но, имя, под, сис], i) => {
+    if (i){
+      const ст = document.createElement('div');
+      ст.className = 'ar'; ст.textContent = '→';
+      ст.style.transitionDelay = (i * 0.08 + 0.06).toFixed(2) + 's';
+      ряд.appendChild(ст);
+    }
+    const к = document.createElement('div');
+    к.className = 'card';
+    к.style.transitionDelay = (i * 0.08 + 0.02).toFixed(2) + 's';
+    for (const [кл, тек] of [['no',но],['nm',имя],['sb',под],['sy',сис]]){
+      const э = document.createElement('div');
+      э.className = кл; э.textContent = тек;
+      к.appendChild(э);
+    }
+    ряд.appendChild(к);
+  });
+
+  // ИТ-ландшафт под цепочкой: те же переделы, набитые несвязанными системами
+  const л = ц.ландшафт, полоса = chain.querySelector('.land');
+  полоса.style.display = л ? '' : 'none';
+  if (!л) return;
+  полоса.querySelector('.hd2').textContent = л.шапка;
+  const ряд2 = полоса.querySelector('.row2');
+  ряд2.textContent = '';
+  л.группы.forEach(([имя, системы], i) => {
+    const г = document.createElement('div');
+    г.className = 'grp';
+    г.style.transitionDelay = (i * 0.07 + 0.30).toFixed(2) + 's';   // после цепочки
+    const н = document.createElement('div');
+    н.className = 'gn'; н.textContent = имя;
+    г.appendChild(н);
+    const кор = document.createElement('div');
+    кор.className = 'chips';
+    for (const с of системы){
+      const ч = document.createElement('div');
+      ч.className = 'chip' + (/^ABAI/.test(с) ? ' abai' : '');
+      ч.textContent = с;
+      кор.appendChild(ч);
+    }
+    г.appendChild(кор);
+    ряд2.appendChild(г);
+  });
+}
+
+function обновитьЦепочку(t, время){
+  if (!t.цепочка){ chain.classList.remove('on'); return; }
+  собратьЦепочку(t.цепочка);
+  const пора = время >= (t.цепочка.с ?? t.from) - EPS;
+  chain.classList.toggle('on', пора);
+}
+
 function armBoundary(){
   clearTimeout(boundary);
   if (phase !== 'play') return;
   const t = TAKES[take];
-  const left = (t.to - film.currentTime) / (film.playbackRate || 1);
+  const сейчас = film.currentTime;
+
+  const нужнаяСкорость = скоростьТакта(t, сейчас);
+  if (Math.abs(film.playbackRate - нужнаяСкорость) > 0.01 && !форсаж)
+    film.playbackRate = нужнаяСкорость;
+  обновитьЦепочку(t, сейчас);
+
+  // ждём того, что наступит раньше: смены скорости или конца такта
+  const смена = следующаяСмена(t, сейчас);
+  const цель = смена !== null ? Math.min(смена, t.to) : t.to;
+  const left = (цель - сейчас) / (film.playbackRate || 1);
   boundary = setTimeout(atBoundary, Math.max(0, left * 1000) + 25);
 }
 
 function atBoundary(){
   if (phase !== 'play') return;
   const t = TAKES[take];
+  if (film.currentTime < t.to - EPS && следующаяСмена(t, film.currentTime) === null
+      && Math.abs(film.playbackRate - скоростьТакта(t, film.currentTime)) > 0.01 && !форсаж){
+    film.playbackRate = скоростьТакта(t, film.currentTime);
+  }
   if (film.currentTime >= t.to - EPS){
     /* Только пауза, без перемотки. Раньше здесь стояло `currentTime = t.to`
        «чтобы ровно на границе» — и давало микрофриз на каждом стыке: любая
@@ -286,7 +455,8 @@ function playTake(idx, { seek = false } = {}){
   // Перемотка только когда прыгаем — назад или на старте.
   if (seek || Math.abs(film.currentTime - t.from) > 0.25) film.currentTime = t.from;
 
-  film.playbackRate = t.rate || 1;
+  форсаж = false;
+  film.playbackRate = скоростьТакта(t, film.currentTime);
   // Если данных ещё не хватило, браузер отклоняет play(). Молча проглотить
   // нельзя: показ тогда просто не тронется с места. Ждём готовности и пробуем
   // ещё раз.
@@ -317,6 +487,7 @@ function forward(){
   if (phase === 'play'){
     const t = TAKES[take], left = t.to - film.currentTime;
     if (left > 0.06){
+      форсаж = true;
       film.playbackRate = Math.min(16, Math.max(2, left / 0.3));
       armBoundary();                    // скорость сменилась — пересчитываем остаток
     } else {
@@ -350,12 +521,13 @@ function finale(){
   film.pause();
   fillTicks(TAKES.length);
   cap.classList.remove('on');
+  chain.classList.remove('on');
   nudge.classList.remove('on');
   // будим слайд: всю подводку он рендерил редко, чтобы не отбирать кадры у ленты
   try { slide.contentWindow.postMessage('слайд:показать', '*'); } catch(_){}
   slide.classList.add('on');
   setTimeout(() => {
-    ['#cap','#bar','#skip','#go-next'].forEach(s => $(s).style.display = 'none');
+    ['#cap','#chain','#bar','#skip','#go-next'].forEach(s => $(s).style.display = 'none');
     $('#tov1').style.display = 'inline-flex';   // на её место встаёт уход на слайд
   }, 1100);
 }
