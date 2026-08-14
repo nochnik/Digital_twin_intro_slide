@@ -259,19 +259,10 @@
 <div id="bar"></div>
 
 <button class="btn" id="skip">пропустить<span>→</span></button>
-<a class="btn" id="tov1" href="первый_слайд_v3.html">Демо показа v1<span>→</span></a>
+<a class="btn" id="tov1" href="первый_слайд_v3.html">3д модель<span>→</span></a>
 
 <div id="start">
-  <div class="k">КазМунайГаз · программа цифрового двойника</div>
-  <h1>Цифровой двойник на базе ИС ABAI</h1>
-  <p>Подводка от планеты к пилотному месторождению: Казахстан → Атырауская
-     область → Восточный Молдабек → объект промысла → цифровой двойник.</p>
-  <button class="btn" id="go">начать показ<span>→</span></button>
   <div class="load" id="load"></div>
-  <label id="fx-sw"><input type="checkbox" checked><span class="sw"></span>
-    <span class="lb">эффекты по контурам в финале</span></label>
-  <div class="hint">такт вперёд: → · enter · пробел · клик<br>
-    такт назад: ← · backspace &nbsp;·&nbsp; esc — сразу к двойнику · f — полный экран</div>
 </div>
 
 <iframe id="slide" title="Цифровой двойник — первый слайд"></iframe>
@@ -325,7 +316,7 @@ const TAKES = [
         ['05','КС и наземная инфраструктура','проектирование новых мощностей','ABAI Наземная инфраструктура'],
       ],
       ландшафт:{
-        шапка:'Инженерный ИТ-ландшафт · 38 систем, единого слоя между ними нет',
+        шапка:'Инженерный ИТ-ландшафт',
         группы:[
           ['Геология и ГРР',        ['Petrel','Techlog','tNavigator','PVTi','PVTSim','Kingdom',
                                      'Hampson Russel','ABAI (БД)']],
@@ -459,8 +450,8 @@ function собратьЭффекты(э){
   });
 }
 
-// переключатель на стартовом экране: показывать ли цифры в финале
-const эффектыВключены = () => $('#fx-sw input').checked;
+// цифры в финале показываем всегда (переключатель со стартового экрана убран)
+const эффектыВключены = () => true;
 
 function обновитьЭффекты(t, время){
   if (!t.эффекты || !эффектыВключены()){ effects.classList.remove('on'); return; }
@@ -650,7 +641,9 @@ function atBoundary(){
        следующий такт продолжается с этого же места. */
     film.pause();
     ticks[take].style.setProperty('--p', 1);
-    hold();
+    // последний такт доигран — показ закончен: цифры выходят сами, лишнего
+    // нажатия «в никуда» на границе финала быть не должно
+    if (take + 1 >= TAKES.length) finale(); else hold();
   } else {
     armBoundary();                      // ещё не дошли — ждём остаток
   }
@@ -773,21 +766,24 @@ function backward(){
    ──────────────────────────────────────────────────────────────────── */
 function finale(){
   cancelAnimationFrame(raf);
+  clearTimeout(boundary);
   phase = 'done';
   film.pause();
   fillTicks(TAKES.length);
   cap.classList.remove('on');
   chain.classList.remove('on');
   mark.classList.remove('on');
-  effects.classList.remove('on');
   nudge.classList.remove('on');
-  // будим слайд: всю подводку он рендерил редко, чтобы не отбирать кадры у ленты
-  try { slide.contentWindow.postMessage('слайд:показать', '*'); } catch(_){}
-  slide.classList.add('on');
-  setTimeout(() => {
-    ['#cap','#chain','#mark','#effects','#bar','#skip','#go-next'].forEach(s => $(s).style.display = 'none');
-    $('#tov1').style.display = 'inline-flex';   // на её место встаёт уход на слайд
-  }, 1100);
+
+  // Показ заканчивается на последнем кадре ленты, а не уходом в модель:
+  // на экране остаются цифры, к двойнику докладчик переходит кнопкой.
+  const т = TAKES[TAKES.length - 1];
+  const конец = т.to - 0.05;
+  if (Math.abs(film.currentTime - конец) > 0.2) { try { film.currentTime = конец; } catch(_){} }
+  if (т.эффекты){ собратьЭффекты(т.эффекты); effects.classList.add('on'); }
+
+  $('#skip').style.display = 'none';
+  $('#tov1').style.display = 'inline-flex';
 }
 
 /* ── управление ──────────────────────────────────────────────────────── */
@@ -832,31 +828,22 @@ slide.src = SLIDE;
    стартует сама, как только их хватит. */
 function начать(){
   if (phase !== 'idle') return;        // оба сторожа готовности могут сработать
-  $('#start').classList.add('gone');
+  const заставка = $('#start');
+  заставка.classList.add('gone');
+  // страховка: если переход по opacity не отработает, экран всё равно уберётся
+  setTimeout(() => { заставка.style.display = 'none'; }, 700);
   playTake(0, { seek:true });
 }
 
-/* Выбор запоминается: показ обычно гоняют несколько раз подряд, и выставлять
-   переключатель заново после каждой перезагрузки — лишний шанс забыть. */
-{
-  const кл = $('#fx-sw input');
-  try {
-    const было = localStorage.getItem('эффекты');
-    if (было !== null) кл.checked = было === '1';
-  } catch(_){}
-  кл.addEventListener('change', () => {
-    try { localStorage.setItem('эффекты', кл.checked ? '1' : '0'); } catch(_){}
-  });
-  $('#fx-sw').addEventListener('click', e => e.stopPropagation());
-}
-
-$('#go').addEventListener('click', e => {
-  e.stopPropagation();
-  if (film.readyState >= 3) return начать();
-  $('#go').firstChild.textContent = 'готовим ленту';
+/* Показ открывается сразу лентой: заставки с кнопкой «начать» больше нет —
+   на неё уходит время докладчика, а приходят сюда уже с модели, осознанно.
+   Пока данных не хватает, на экране остаётся только строка ожидания. */
+$('#load').textContent = 'готовим ленту…';
+if (film.readyState >= 3) начать();
+else {
   film.addEventListener('canplaythrough', начать, { once:true });
   film.addEventListener('canplay', () => setTimeout(начать, 400), { once:true });
-});
+}
 </script>
 </body>
 </html>
