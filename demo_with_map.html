@@ -239,6 +239,13 @@
   #slide{position:fixed;inset:0;width:100%;height:100%;border:0;z-index:15;
     opacity:0;pointer-events:none;transition:opacity .9s ease-in}
   #slide.on{opacity:1;pointer-events:auto}
+
+  /* ── этап тиражирования: планета с областями, после финала ────────────
+     Тоже <iframe>, тоже поднимается заранее — но слоем выше слайда и ниже
+     кнопки «3д модель», чтобы она осталась нажимаемой поверх глобуса. */
+  #globe{position:fixed;inset:0;width:100%;height:100%;border:0;z-index:16;
+    opacity:0;pointer-events:none;transition:opacity .9s ease-in}
+  #globe.on{opacity:1;pointer-events:auto}
 </style>
 </head>
 <body>
@@ -266,6 +273,7 @@
 </div>
 
 <iframe id="slide" title="Цифровой двойник — первый слайд"></iframe>
+<iframe id="globe" title="Тиражирование цифрового двойника"></iframe>
 
 <script>
 /* ────────────────────────────────────────────────────────────────────────
@@ -363,7 +371,7 @@ const TAKES = [
       ],
       итоги:[
         ['окт. 2026', 'промышленная эксплуатация пилота Молдабек В.'],
-        ['12',        'приоритетных активов, 7 ДЗО — 2027–2028'],
+        ['12',        'ТОП-12 месторождений КМГ, 7 ДЗО — 2027'],
         ['100%',      'добывающих активов к 2028 году'],
       ],
     },
@@ -371,17 +379,19 @@ const TAKES = [
 ];
 
 const SLIDE = 'первый_слайд_v3.html';
+const ГЛОБУС = 'тиражирование.html';
 const EPS = 0.03;                       // допуск сравнения времени, меньше кадра
 
 const $ = s => document.querySelector(s);
 const film = $('#film'), cap = $('#cap'), bar = $('#bar'),
-      slide = $('#slide'), nudge = $('#go-next'), chain = $('#chain'), mark = $('#mark'), effects = $('#effects');
+      slide = $('#slide'), nudge = $('#go-next'), chain = $('#chain'), mark = $('#mark'), effects = $('#effects'),
+      globe = $('#globe');
 
 TAKES.forEach(() => bar.appendChild(document.createElement('i')));
 const ticks = [...bar.children];
 
 let take = -1;
-let phase = 'idle';                     // idle | play | hold | done
+let phase = 'idle';                     // idle | play | hold | финал | глобус
 let raf = 0;
 let форсаж = false;      // такт доводится ускорением по нажатию — расписание скоростей молчит
 let опускается = false;  // идёт возврат панели и кадра, следующий такт ждёт его конца
@@ -683,6 +693,9 @@ function playTake(idx, { seek = false } = {}){
   if (seek || Math.abs(film.currentTime - t.from) > 0.25) film.currentTime = t.from;
 
   форсаж = false;
+  // на последнем такте поднимаем этап тиражирования: у него двадцать секунд
+  // разбега, и к финалу планета уже собрана
+  if (idx === TAKES.length - 1) поднятьГлобус();
   цепочкуНаЭкран(t, false);       // новый такт всегда начинается без панели
   film.playbackRate = скоростьТакта(t, film.currentTime);
   // Если данных ещё не хватило, браузер отклоняет play(). Молча проглотить
@@ -708,7 +721,12 @@ function hold(){
 
 /* ── вперёд ──────────────────────────────────────────────────────────── */
 function forward(){
-  if (phase === 'done' || phase === 'idle') return;
+  if (phase === 'idle') return;
+
+  // После цифр показ не кончается: следующий шаг — этап тиражирования, дальше
+  // шаги идут внутри него и пробрасываются сообщением.
+  if (phase === 'финал') return показатьГлобус();
+  if (phase === 'глобус') return глобусу({ шаг:+1 });
 
   // Нажали посреди такта — доводим его до конца ускорением, а не прыжком:
   // кадр стыка должен остаться тем же.
@@ -749,7 +767,11 @@ function forward(){
 
 /* ── назад ───────────────────────────────────────────────────────────── */
 function backward(){
-  if (phase === 'done' || phase === 'idle') return;
+  if (phase === 'idle') return;
+  // внутри глобуса шаг назад ведёт по его этапам; с первого он сам попросит
+  // вернуть показ к цифрам
+  if (phase === 'глобус') return глобусу({ шаг:-1 });
+  if (phase === 'финал') return;        // назад с финала не идём: там перемотка ленты
   // поднятая панель — сначала убираем её, такт при этом остаётся на месте
   if (цепочкаПоднята()){ цепочкуНаЭкран(TAKES[take], false); return; }
   // с середины такта — в его начало, с паузы — на такт раньше
@@ -758,29 +780,83 @@ function backward(){
   playTake(Math.max(0, to), { seek:true });
 }
 
+/* ── этап тиражирования ───────────────────────────────────────────────
+   Последний этап показа — не кадр ленты, а живая сцена three.js: планета,
+   подсвеченные области, метки активов. Живёт в своём файле и своём iframe,
+   поднимается заранее вместе со слайдом, но тронуться обязан по команде:
+   иначе подлёт планеты отыграет в скрытом кадре и наплыв застанет её стоящей.
+
+   Клавиатура остаётся одна на весь показ — шаги пробрасываются сообщением, а
+   не отдаются фокусу внутри рамки: фокус в iframe теряется от любого клика по
+   родителю, и половина нажатий уходила бы в пустоту.
+   ──────────────────────────────────────────────────────────────────── */
+let глобусГотов = false, глобусЖдётСтарта = false;
+
+function глобусу(что){
+  if (globe.contentWindow) globe.contentWindow.postMessage({ глобусу:true, ...что }, '*');
+}
+
+function поднятьГлобус(){
+  if (!globe.src) globe.src = ГЛОБУС;
+}
+
+function показатьГлобус(){
+  поднятьГлобус();
+  phase = 'глобус';
+  effects.classList.remove('on');
+  nudge.classList.remove('on');
+  globe.classList.add('on');
+  if (глобусГотов) глобусу({ старт:true }); else глобусЖдётСтарта = true;
+}
+
+function спрятатьГлобус(){
+  phase = 'финал';
+  globe.classList.remove('on');
+  глобусу({ сброс:true });
+  const т = TAKES[TAKES.length - 1];
+  if (т.эффекты){ собратьЭффекты(т.эффекты); effects.classList.add('on'); }
+  nudge.classList.add('on');
+}
+
+addEventListener('message', e => {
+  const д = e.data;
+  if (!д || !д.глобус) return;
+  if (д.готов){
+    глобусГотов = true;
+    if (глобусЖдётСтарта){ глобусЖдётСтарта = false; глобусу({ старт:true }); }
+  }
+  // с первого этапа глобуса шаг назад возвращает показ к цифрам
+  if (д.назад && phase === 'глобус') спрятатьГлобус();
+});
+
 /* ── финал ────────────────────────────────────────────────────────────
    Слайд поднялся в скрытом iframe ещё на первом такте и всё это время
    рендерил сцену. Лента остаётся на своём последнем кадре, и мы наплываем
    на живую сцену: ни загрузки, ни вспышки, а наплыв заодно съедает
    остаточную разницу между кадром ленты и рендером.
+
+   Финал больше не конец показа: на нём стоят цифры, а следующий шаг уводит
+   на этап тиражирования.
    ──────────────────────────────────────────────────────────────────── */
 function finale(){
   cancelAnimationFrame(raf);
   clearTimeout(boundary);
-  phase = 'done';
+  phase = 'финал';
   film.pause();
   fillTicks(TAKES.length);
   cap.classList.remove('on');
   chain.classList.remove('on');
   mark.classList.remove('on');
-  nudge.classList.remove('on');
 
-  // Показ заканчивается на последнем кадре ленты, а не уходом в модель:
-  // на экране остаются цифры, к двойнику докладчик переходит кнопкой.
+  // Лента замирает на последнем кадре, на экране остаются цифры. Дальше —
+  // либо шаг на тиражирование, либо кнопка к самому двойнику.
   const т = TAKES[TAKES.length - 1];
   const конец = т.to - 0.05;
   if (Math.abs(film.currentTime - конец) > 0.2) { try { film.currentTime = конец; } catch(_){} }
   if (т.эффекты){ собратьЭффекты(т.эффекты); effects.classList.add('on'); }
+
+  поднятьГлобус();               // на случай прихода сюда пропуском, а не по ленте
+  nudge.classList.add('on');     // впереди ещё этап, подсказка обязана остаться
 
   $('#skip').style.display = 'none';
   $('#tov1').style.display = 'inline-flex';
@@ -792,19 +868,23 @@ $('#skip').addEventListener('click', e => { e.stopPropagation(); finale(); });
 $('#tov1').addEventListener('click', e => e.stopPropagation());
 
 addEventListener('keydown', e => {
-  if (phase === 'idle' || phase === 'done') return;
+  if (phase === 'idle') return;
   const c = e.code;
   if (c === 'ArrowRight' || c === 'Enter' || c === 'NumpadEnter' ||
       c === 'Space' || c === 'PageDown'){ e.preventDefault(); forward(); }
   if (c === 'ArrowLeft' || c === 'Backspace' || c === 'PageUp'){ e.preventDefault(); backward(); }
-  if (c === 'Escape') finale();
+  if (c === 'Escape' && phase !== 'глобус') finale();
   if (c === 'KeyF'){
     document.fullscreenElement ? document.exitFullscreen()
                                : document.documentElement.requestFullscreen();
   }
 });
 
-addEventListener('click', () => { if (phase === 'play' || phase === 'hold') forward(); });
+/* Клик по родителю ведёт показ до финала включительно. Внутри глобуса клики
+   ловит он сам — до родителя они не доходят, и пробрасывать их незачем. */
+addEventListener('click', () => {
+  if (phase === 'play' || phase === 'hold' || phase === 'финал') forward();
+});
 
 /* ── старт ───────────────────────────────────────────────────────────── */
 const load = $('#load');

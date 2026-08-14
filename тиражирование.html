@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Тиражирование цифрового двойника · 2026–2028</title>
+<style>
+  :root{
+    --cyan:#4FE3FF; --amber:#F0AE4A; --teal:#35D0C2; --viol:#9B7BE8;
+    --bg0:#050810;
+    --txt:#D7E2F2; --dim:#7C8DA6; --line:rgba(140,170,210,.22);
+    --mono:"JetBrains Mono",ui-monospace,"SF Mono",Consolas,monospace;
+    --serif:"IBM Plex Serif",Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg0);color:var(--txt);overflow:hidden;cursor:default;
+    font-family:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased}
+  canvas{display:block}
+
+  /* Виньетка та же, что в показе: без неё край шара упирается в углы кадра */
+  #vig{position:fixed;inset:0;pointer-events:none;z-index:3;
+    background:radial-gradient(ellipse at 50% 48%,transparent 52%,rgba(5,8,16,.62) 100%)}
+
+  /* ── плашка справа сверху ─────────────────────────────────────────────
+     Стоит там же, где в показе стоит панель эффектов, и в той же типографике:
+     этап продолжает финал, а не начинает новый разговор.
+     ──────────────────────────────────────────────────────────────────── */
+  #плашка{position:fixed;right:34px;top:5.5%;width:31%;max-width:520px;z-index:6;
+    padding:22px 26px 22px;
+    background:linear-gradient(180deg,rgba(6,11,20,.96),rgba(4,8,15,.985));
+    border:1px solid rgba(140,170,210,.16);
+    opacity:0;transform:translateX(40px);
+    transition:opacity .5s,transform .6s cubic-bezier(.22,.61,.36,1);
+    pointer-events:none}
+  #плашка.on{opacity:1;transform:none}
+  #плашка .год{font-family:var(--mono);font-size:13.5px;letter-spacing:.24em;
+    text-transform:uppercase;color:var(--цв,var(--amber))}
+  #плашка .имя{font-family:var(--serif);font-size:31px;font-weight:600;
+    line-height:1.14;margin-top:11px;color:#F2F7FF}
+  #плашка .под{font-size:14px;color:#9DB4CE;margin-top:10px;line-height:1.45}
+
+  #плашка .строки{margin-top:18px;padding-top:16px;
+    border-top:1px solid rgba(140,170,210,.16)}
+  #плашка .гр{margin-bottom:13px}
+  #плашка .гр:last-child{margin-bottom:0}
+  #плашка .гр .об{font-family:var(--mono);font-size:12px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--цв,var(--amber));opacity:.85}
+  #плашка .гр .ак{font-size:14.5px;color:#D7E2F2;margin-top:6px;line-height:1.5}
+
+  #плашка .итог{margin-top:18px;padding-top:16px;
+    border-top:1px solid rgba(140,170,210,.16);
+    border-left:2px solid var(--cyan);padding-left:12px}
+  #плашка .итог .v{font-family:var(--mono);font-size:19px;color:#EAF2FF;line-height:1.1}
+  #плашка .итог .l{font-size:13px;color:#8296AE;margin-top:5px;line-height:1.35}
+
+  /* Содержимое плашки сменяется по этапам — гасим его отдельно от самой
+     плашки, иначе на переходе она уезжает вбок и возвращается. */
+  #плашка .тело{transition:opacity .28s}
+  #плашка.смена .тело{opacity:0}
+
+  /* ── подпись этапа слева снизу ───────────────────────────────────────── */
+  #титр{position:fixed;left:44px;bottom:74px;z-index:6;max-width:44ch;
+    opacity:0;transform:translateY(10px);transition:opacity .5s,transform .5s}
+  #титр.on{opacity:1;transform:none}
+  #титр .k{font-family:var(--mono);font-size:10px;letter-spacing:.26em;
+    text-transform:uppercase;color:var(--цв,var(--cyan))}
+  #титр .t{font-family:var(--serif);font-size:34px;font-weight:600;
+    line-height:1.14;margin-top:8px}
+
+  /* ── метки на поверхности ────────────────────────────────────────────
+     Слой DOM поверх сцены: текст остаётся чётким на любом приближении, чего
+     от спрайта в три-дэ не добиться, а позиция каждый кадр берётся проекцией
+     точки шара в экран.
+     ──────────────────────────────────────────────────────────────────── */
+  #метки{position:fixed;inset:0;z-index:5;pointer-events:none;overflow:hidden}
+  /* Поводки лежат отдельным слоем: подпись разведена от своей точки, и линию
+     между ними в разметке уже не провести — нужен свой холст. */
+  #поводки{position:absolute;inset:0;width:100%;height:100%}
+  #поводки line{stroke-width:1.2;opacity:0;transition:opacity .4s}
+
+  /* Точка садится ровно на координату: смещение на половину кружка отдано
+     трансформации, а пульс идёт тенью, а не масштабом — масштаб перебил бы
+     это смещение, и точка уехала бы с места. */
+  /* Кольцо с ядром: пустой кружок такого размера читается как дырка, а не как
+     метка. Ядро — отдельный псевдоэлемент, а не тень внутрь: у пилотной точки
+     тень занята пульсом и ядро из неё вылетало бы на каждом кадре анимации. */
+  .тчк{position:absolute;left:0;top:0;width:19px;height:19px;
+    border:1.5px solid var(--мц);border-radius:50%;background:rgba(5,10,20,.55);
+    box-shadow:0 0 10px var(--мц);transform:translate(-50%,-50%);
+    opacity:0;transition:opacity .4s}
+  .тчк::after{content:'';position:absolute;left:50%;top:50%;
+    width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;
+    background:var(--мц)}
+  .тчк.on{opacity:1}
+  .тчк.пилот{width:28px;height:28px;border-width:2px;
+    animation:пульс 2.4s ease-in-out infinite}
+  .тчк.пилот::after{width:9px;height:9px;margin:-4.5px 0 0 -4.5px}
+  @keyframes пульс{
+    0%,100%{box-shadow:0 0 10px var(--мц), 0 0 0 0 rgba(240,174,74,.5)}
+    50%    {box-shadow:0 0 18px var(--мц), 0 0 0 12px rgba(240,174,74,0)}}
+
+  /* Мини-плашка месторождения. Полоска-акцент всегда со стороны своей точки:
+     у подписи слева она справа, иначе выноска читается как принадлежащая
+     соседу справа. */
+  .пдп{position:absolute;left:0;top:0;display:flex;align-items:center;gap:7px;
+    font-family:var(--mono);font-size:12.5px;
+    letter-spacing:.1em;text-transform:uppercase;color:#EAF2FF;white-space:nowrap;
+    background:rgba(8,14,26,.9);border-left:2px solid var(--мц);
+    padding:6px 11px;line-height:1.2;opacity:0;transition:opacity .4s}
+  .пдп.on{opacity:1}
+  .пдп.слева{border-left:0;border-right:2px solid var(--мц)}
+  .пдп.пилот{font-size:14px;padding:8px 13px;color:#FFF3E0}
+  /* Значок вышки: без него подписи читались просто как названия — непонятно,
+     города это, посёлки или что-то ещё. */
+  .пдп svg{flex:0 0 auto;width:10px;height:13px;stroke:var(--мц);
+    stroke-width:1.2;fill:none;opacity:.95}
+  .пдп.пилот svg{width:11px;height:14px}
+
+  /* ── подсказка и шкала ───────────────────────────────────────────────── */
+  #дальше{position:fixed;right:44px;bottom:74px;z-index:6;display:flex;
+    align-items:center;gap:11px;font-family:var(--mono);font-size:10px;
+    letter-spacing:.2em;text-transform:uppercase;color:var(--dim);
+    opacity:0;transition:opacity .4s;pointer-events:none}
+  #дальше.on{opacity:1}
+  #дальше .a{font-size:17px;line-height:1;color:var(--cyan);
+    animation:кив 1.7s ease-in-out infinite}
+  @keyframes кив{0%,100%{transform:translateX(0);opacity:.55}
+                 50%{transform:translateX(5px);opacity:1}}
+
+  #шкала{position:fixed;left:0;right:0;bottom:0;height:2px;z-index:7;
+    background:rgba(140,170,210,.14);display:flex;gap:2px;padding:0 2px}
+  #шкала i{flex:1;background:rgba(140,170,210,.14);position:relative;overflow:hidden}
+  #шкала i::after{content:'';position:absolute;inset:0;background:var(--cyan);
+    transform:scaleX(var(--p,0));transform-origin:left;transition:transform .5s ease-out}
+
+  #ожидание{position:fixed;inset:0;z-index:9;display:flex;align-items:center;
+    justify-content:center;font-family:var(--mono);font-size:10px;
+    letter-spacing:.24em;text-transform:uppercase;color:var(--dim);
+    background:var(--bg0);transition:opacity .6s}
+  #ожидание.gone{opacity:0;pointer-events:none}
+</style>
+</head>
+<body>
+
+<div id="vig"></div>
+<div id="метки"><svg id="поводки"></svg></div>
+
+<div id="плашка"><div class="тело">
+  <div class="год"></div><div class="имя"></div><div class="под"></div>
+  <div class="строки"></div><div class="итог"></div>
+</div></div>
+
+<div id="титр"><div class="k"></div><div class="t"></div></div>
+<div id="дальше"><span>дальше</span><span class="a">→</span></div>
+<div id="шкала"></div>
+<div id="ожидание">строим планету…</div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three.module.js",
+  "three/addons/": "./vendor/addons/"
+} }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ТИРАЖИРОВАНИЕ ЦИФРОВОГО ДВОЙНИКА — этап после финала показа.
+
+   Планета собрана векторно: тёмный шар с картой в канвасе, огни городов
+   точками, ободок атмосферы шейдером. Снимков Земли в репозитории нет и не
+   качается ничего — на показе интернета может не быть, а весь этап должен
+   подниматься из тех же 300 КБ данных, что лежат рядом.
+
+   Формы не рисуются на глаз: контуры областей — OpenStreetMap (собраны
+   `тиражирование/инструменты/собрать_гео.js`), контуры стран — Natural Earth
+   110m, огни — Natural Earth 50m по людности.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+const R = 100;                         // радиус планеты, всё остальное от него
+const ЦВЕТ = { циан:'#4FE3FF', янтарь:'#F0AE4A', бирюза:'#35D0C2', фон:'#050810' };
+
+/* ── активы ────────────────────────────────────────────────────────────
+   Двенадцать приоритетных активов. Номера, области и ДЗО — со схемы заказчика
+   (`map_kz_oblasts_12_assets_v2`), она в этом первоисточник.
+
+   А вот координаты со схемы не берутся. Она нарисована от руки: привязка по
+   семи активам, чьё положение подтверждено в OpenStreetMap, даёт невязку до
+   79 км, и точки на ней намеренно раздвинуты, чтобы подписи не сталкивались —
+   между Узенем и Карамандыбасом там 76 км, хотя промыслы стоят вплотную.
+   Поэтому со схемы взято только направление «кто где относительно соседа»,
+   а сами градусы — из OSM. Проверить пересчёт: инструменты/снять_с_карты.js
+
+   Поле `точность` говорит, чему верить:
+     osm    — в OSM найден сам промысел или посёлок при нём
+     район  — объекта в OSM нет, точка по району из документов проекта
+     схема  — объекта в OSM нет, точка отложена от подтверждённого соседа
+              в направлении, заданном схемой; десятки километров погрешности
+
+   Поле `сторона` — куда от точки уходит подпись. Задано вручную, а не
+   вычисляется: справа кадр занят плашкой, слева свободно, и мангистаускую
+   кучу выгоднее развернуть в одну колонку влево, чем отдавать это автомату.
+   ──────────────────────────────────────────────────────────────────── */
+const АКТИВЫ = [
+  { н: 1, имя:'В. Молдабек',    обл:'atyrau',    дзо:'ЭМГ', т:[54.40, 47.72], волна:1, точность:'район', сторона:'право' },
+  /* «в т.ч. СЗК» стоит в списке заказчика без расшифровки. Пока её нет,
+     оговорка идёт в плашку дословно, а метка на карте одна: гадать, что это
+     за объект и где он, и ставить вторую точку — хуже, чем не ставить. */
+  { н: 2, имя:'С. Нуржанова',   обл:'atyrau',    дзо:'ЭМГ', т:[53.27, 45.87], волна:2, точность:'osm',   сторона:'право',
+    полное:'С. Нуржанова (в т.ч. СЗК)' },
+  { н: 3, имя:'Узень',          обл:'mangystau', дзо:'ОМГ', т:[52.86, 43.34], волна:2, точность:'osm',   сторона:'лево'  },
+  { н: 4, имя:'Карамандыбас',   обл:'mangystau', дзо:'ОМГ', т:[52.72, 43.42], волна:2, точность:'схема', сторона:'лево'  },
+  { н: 5, имя:'Каратобе Южное', обл:'mangystau', дзо:'КТМ', т:[52.20, 44.05], волна:2, точность:'схема', сторона:'лево'  },
+  { н: 6, имя:'Каламкас',       обл:'mangystau', дзо:'ММГ', т:[51.97, 44.73], волна:2, точность:'osm',   сторона:'лево'  },
+  { н: 7, имя:'Жетыбай',        обл:'mangystau', дзо:'ММГ', т:[52.10, 43.59], волна:2, точность:'osm',   сторона:'лево'  },
+  { н: 8, имя:'Каражанбас',     обл:'mangystau', дзо:'КБМ', т:[51.40, 45.13], волна:2, точность:'osm',   сторона:'лево'  },
+  { н: 9, имя:'Асар',           обл:'mangystau', дзо:'ММГ', т:[51.80, 43.55], волна:2, точность:'схема', сторона:'лево'  },
+  { н:10, имя:'Алибекмола',     обл:'aktobe',    дзо:'КОА', т:[56.85, 48.35], волна:2, точность:'схема', сторона:'право' },
+  { н:11, имя:'Кожасай',        обл:'aktobe',    дзо:'КОА', т:[57.11, 48.22], волна:2, точность:'osm',   сторона:'право' },
+  // подпись Акшабулака уходит влево: справа она легла бы под плашку этапа
+  { н:12, имя:'Акшабулак Ц',    обл:'kyzylorda', дзо:'КГМ', т:[65.72, 45.95], волна:2, точность:'osm',   сторона:'лево'  },
+];
+
+/* Семь ДЗО — те же и в том же сокращении, что в легенде схемы */
+const ДЗО = {
+  ЭМГ:'Эмбамунайгаз', ОМГ:'Озенмунайгаз', КТМ:'Казахтуркмунай',
+  ММГ:'Мангистаумунайгаз', КБМ:'Каражанбасмунай', КОА:'Казахойл Актобе',
+  КГМ:'Казгермунай',
+};
+
+/* Область называется только в списке справа. На карте её имени нет: месторож-
+   дения подписаны каждое своей плашкой, и второй слой названий поверх них
+   читался как шум — область и так видно по подсветке. */
+const ИМЕНА_ОБЛ = {
+  atyrau:'Атырауская', mangystau:'Мангистауская',
+  aktobe:'Актюбинская', kyzylorda:'Кызылординская',
+};
+
+/* ── этапы ─────────────────────────────────────────────────────────────
+   Камера задаётся не позицией, а точкой на глобусе и высотой над ним:
+   так кадр не разъезжается, если поменять состав этапа.
+
+   Ход этапа — отъезд, а не подлёт. Предыдущий кадр показа заканчивается
+   блоком двойника вплотную, поэтому и здесь камера начинает у самого
+   промысла и раскрывается: сперва область, потом вся страна. Заход с орбиты
+   ломал бы стык — зритель только что стоял у скважины.
+
+   Скрытые этапы остаются в коде: их сняли с показа, а не отменили.
+   ──────────────────────────────────────────────────────────────────── */
+const ЭТАПЫ = [
+  {
+    ключ:'планета',
+    скрыт:true,                 // снят с показа: этап идёт от промысла наружу
+    камера:{ ш:46.5, д:66, даль:300 },
+    подсветка:[],
+    цвет:ЦВЕТ.циан,
+    титр:{ k:'Программа «Цифровой двойник»', t:'От пилота — ко всей добыче' },
+    плашка:null,
+  },
+  {
+    ключ:'пилот',
+    /* Вход — кадр, с которого этап открывается: камера над самим промыслом,
+       дальше отъезжает к рамке этапа. Ближе не ставится: ореол контура задан
+       в долях градуса и на подлёте вплотную разрастается во весь экран —
+       область превращается в оранжевое пятно без формы. На 118 промысел ещё
+       крупно, а контур области уже читается. */
+    вход:{ ш:47.72, д:54.40, даль:118 },
+    камера:{ ш:47.5, д:56.5, даль:152 },
+    подсветка:[{ обл:'atyrau', цвет:ЦВЕТ.янтарь }],
+    цвет:ЦВЕТ.янтарь,
+    метки:{ волна:1, подписи:true },
+    титр:null,
+    плашка:{
+      год:'2026',
+      имя:'Восточный Молдабек',
+      под:'Атырауская область · пилотный актив программы',
+      итог:['окт. 2026', 'промышленная эксплуатация пилота'],
+    },
+  },
+  {
+    ключ:'тираж',
+    камера:{ ш:48, д:57.5, даль:162 },
+    // на этом кадре пилотная область гаснет до общего циана: разговор уже не
+    // про неё одну, а про все двенадцать, и выделять её цветом незачем
+    подсветка:[
+      { обл:'atyrau',    цвет:ЦВЕТ.циан },
+      { обл:'mangystau', цвет:ЦВЕТ.циан },
+      { обл:'aktobe',    цвет:ЦВЕТ.циан },
+      { обл:'kyzylorda', цвет:ЦВЕТ.циан },
+    ],
+    цвет:ЦВЕТ.циан,
+    метки:{ волна:2, подписи:true },
+    титр:null,
+    плашка:{
+      год:'2027',
+      имя:'ТОП-12 месторождений КМГ',
+      под:'7 ДЗО · четыре области',
+      список:true,
+    },
+  },
+  {
+    ключ:'сто',
+    скрыт:true,                 // снят с показа по просьбе заказчика
+    камера:{ ш:48.5, д:59, даль:180 },
+    подсветка:'вся страна',
+    цвет:ЦВЕТ.бирюза,
+    метки:{ волна:2, подписи:false },
+    титр:{ k:'Целевой охват', t:'Единый двойник группы' },
+    плашка:{
+      год:'2028',
+      имя:'100%',
+      под:'добывающих активов КМГ охвачены цифровым двойником',
+      итог:['2026 → 2028', 'от пилота Молдабек В. до полного охвата'],
+    },
+  },
+];
+
+/* Идут только не скрытые. Скрытый этап остаётся в коде, но ни в шкалу, ни в
+   шаги не попадает — вернуть его значит убрать одну строку. */
+const АКТ = ЭТАПЫ.filter(э => !э.скрыт);
+
+/* ── геометрия шара ────────────────────────────────────────────────────
+   Долгота/широта → точка на сфере. Та же ось, что у SphereGeometry с
+   phiStart = 0: долгота −180° приходится на u = 0, поэтому равнопромежуточная
+   картинка ложится на шар без разворотов.
+   ──────────────────────────────────────────────────────────────────── */
+const рад = г => г * Math.PI / 180;
+function наШар(д, ш, r = R){
+  const φ = рад(90 - ш), θ = рад(д + 180);
+  return new THREE.Vector3(-r * Math.sin(φ) * Math.cos(θ),
+                            r * Math.cos(φ),
+                            r * Math.sin(φ) * Math.sin(θ));
+}
+
+/* ── загрузка данных ───────────────────────────────────────────────────
+   Кириллица в пути кодируется посегментно: без этого часть браузеров уносит
+   запрос не туда, а страница на GitHub Pages вообще не поднимается.
+   ──────────────────────────────────────────────────────────────────── */
+const путь = (...ч) => ч.map(encodeURIComponent).join('/');
+const взять = (...ч) => fetch(путь(...ч)).then(r => {
+  if (!r.ok) throw new Error(ч.join('/') + ' → ' + r.status);
+  return r.json();
+});
+
+const [ОБЛАСТИ, МИР, ОГНИ] = await Promise.all([
+  взять('тиражирование', 'данные', 'области_кз.json'),
+  взять('тиражирование', 'данные', 'мир.json'),
+  взять('тиражирование', 'данные', 'огни.json'),
+]);
+
+/* Сторож координат: точка актива обязана лежать внутри своей области.
+   Проверка лучом — та же, что в инструментах подводки. Ошибки не глушим
+   молча, а пишем в консоль: промах в градусе с глобуса не виден, а на
+   разборе списка всплывёт. */
+function внутри(точка, кольца){
+  let да = false;
+  for (const к of кольца)
+    for (let i = 0, j = к.length - 1; i < к.length; j = i++){
+      const [ax, ay] = к[i], [bx, by] = к[j];
+      if ((ay > точка[1]) !== (by > точка[1]) &&
+          точка[0] < (bx - ax) * (точка[1] - ay) / (by - ay) + ax) да = !да;
+    }
+  return да;
+}
+for (const а of АКТИВЫ){
+  const о = ОБЛАСТИ[а.обл];
+  if (!о) { console.warn(`область «${а.обл}» не найдена — актив ${а.имя}`); continue; }
+  if (!внутри(а.т, о.кольца))
+    console.warn(`${а.имя}: точка ${а.т} вне контура «${о.имя}» (точность «${а.точность}»)`);
+}
+
+/* ── сцена ─────────────────────────────────────────────────────────── */
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.setClearColor(0x000000, 1);
+document.body.insertBefore(renderer.domElement, document.getElementById('vig'));
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 1, 12000);
+
+/* ── карта планеты в канвасе ───────────────────────────────────────────
+   Суша, границы стран и сетка меридианов рисуются один раз в равнопромежу-
+   точную картинку и натягиваются на шар. В три-дэ это были бы десятки тысяч
+   отрезков и толщина линии в один пиксель без вариантов; в канвасе есть и
+   толщина, и свечение, и сглаживание.
+   ──────────────────────────────────────────────────────────────────── */
+function картаМира(){
+  const W = 4096, H = 2048;
+  const к = document.createElement('canvas'); к.width = W; к.height = H;
+  const g = к.getContext('2d');
+  const X = д => (д + 180) / 360 * W, Y = ш => (90 - ш) / 180 * H;
+
+  g.fillStyle = '#04070E'; g.fillRect(0, 0, W, H);
+
+  // сетка через 15° — на дальнем плане она и даёт ощущение глобуса
+  g.strokeStyle = 'rgba(79,227,255,.05)'; g.lineWidth = 1.5;
+  for (let д = -180; д <= 180; д += 15){
+    g.beginPath(); g.moveTo(X(д), 0); g.lineTo(X(д), H); g.stroke();
+  }
+  for (let ш = -75; ш <= 75; ш += 15){
+    g.beginPath(); g.moveTo(0, Y(ш)); g.lineTo(W, Y(ш)); g.stroke();
+  }
+
+  // суша: заливка чуть светлее океана, кромка — тонкий циан
+  g.lineJoin = 'round'; g.lineWidth = 1.6;
+  for (const с of МИР) for (const кольцо of с.кольца){
+    g.beginPath();
+    кольцо.forEach(([д, ш], i) => i ? g.lineTo(X(д), Y(ш)) : g.moveTo(X(д), Y(ш)));
+    g.closePath();
+    g.fillStyle = '#0A1421'; g.fill();
+    g.strokeStyle = 'rgba(120,190,235,.20)'; g.stroke();
+  }
+
+  const т = new THREE.CanvasTexture(к);
+  т.colorSpace = THREE.SRGBColorSpace;
+  т.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  return т;
+}
+
+const шар = new THREE.Mesh(
+  new THREE.SphereGeometry(R, 128, 96),
+  new THREE.MeshBasicMaterial({ map: картаМира() })
+);
+шар.renderOrder = 0;
+scene.add(шар);
+
+/* ── огни городов ──────────────────────────────────────────────────────
+   Ночная сторона на референсе — россыпь тёплых точек. Снимок ради этого
+   тянуть незачем: тысяча с небольшим городов с силой по людности читается
+   так же, а весит 25 КБ.
+   ──────────────────────────────────────────────────────────────────── */
+function точкаСвета(){
+  const к = document.createElement('canvas'); к.width = к.height = 64;
+  const g = к.getContext('2d');
+  const гр = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  гр.addColorStop(0,   'rgba(255,214,150,1)');
+  гр.addColorStop(.25, 'rgba(255,168,74,.55)');
+  гр.addColorStop(1,   'rgba(255,150,60,0)');
+  g.fillStyle = гр; g.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(к);
+}
+{
+  const поз = new Float32Array(ОГНИ.length * 3);
+  const разм = new Float32Array(ОГНИ.length);
+  ОГНИ.forEach(([д, ш, с], i) => {
+    наШар(д, ш, R + 0.15).toArray(поз, i * 3);
+    разм[i] = 0.9 + с * 3.2;
+  });
+  const г = new THREE.BufferGeometry();
+  г.setAttribute('position', new THREE.BufferAttribute(поз, 3));
+  г.setAttribute('aSize',    new THREE.BufferAttribute(разм, 1));
+
+  /* Имена внутри шейдера латиницей: GLSL принимает только ASCII, и на
+     кириллическом идентификаторе программа молча не собирается — огни
+     просто не появляются, без ошибки в консоли. */
+  const м = new THREE.ShaderMaterial({
+    uniforms:{ uTex:{ value: точкаСвета() }, uGain:{ value: 1 },
+               // без плотности пикселей огни на retina выходят вдвое мельче
+               uDpr:{ value: renderer.getPixelRatio() } },
+    vertexShader:`
+      attribute float aSize;
+      uniform float uDpr;
+      varying float vSize;
+      void main(){
+        vSize = aSize;
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        gl_PointSize = aSize * 300.0 * uDpr / -mv.z;
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader:`
+      uniform sampler2D uTex; uniform float uGain;
+      varying float vSize;
+      void main(){
+        vec4 c = texture2D(uTex, gl_PointCoord);
+        gl_FragColor = vec4(c.rgb, c.a * uGain * min(1.0, vSize * 0.5));
+      }`,
+    transparent:true, depthWrite:false, blending:THREE.AdditiveBlending,
+  });
+  const огни = new THREE.Points(г, м);
+  огни.renderOrder = 1;
+  scene.add(огни);
+}
+
+/* ── ободок атмосферы ──────────────────────────────────────────────────
+   Оболочка чуть больше планеты, вывернутая наизнанку: свет набирается к
+   краю диска и гаснет к центру. Это тот самый светящийся край, по которому
+   кадр читается как «из космоса».
+   ──────────────────────────────────────────────────────────────────── */
+{
+  const м = new THREE.ShaderMaterial({
+    uniforms:{ uColor:{ value:new THREE.Color(ЦВЕТ.циан) }, uGain:{ value:1.5 } },
+    vertexShader:`
+      varying vec3 vN;
+      void main(){
+        vN = normalize(normalMatrix * normal);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }`,
+    fragmentShader:`
+      uniform vec3 uColor; uniform float uGain;
+      varying vec3 vN;
+      void main(){
+        float i = pow(0.62 - dot(vN, vec3(0.0, 0.0, 1.0)), 4.0);
+        gl_FragColor = vec4(uColor, 1.0) * i * uGain;
+      }`,
+    side:THREE.BackSide, blending:THREE.AdditiveBlending,
+    transparent:true, depthWrite:false,
+  });
+  const об = new THREE.Mesh(new THREE.SphereGeometry(R * 1.14, 64, 48), м);
+  об.renderOrder = 6;
+  scene.add(об);
+}
+
+/* ── звёзды ────────────────────────────────────────────────────────── */
+{
+  const N = 1400, поз = new Float32Array(N * 3);
+  // сетка Фибоначчи: равномернее случайной выборки, без сгустков у полюсов
+  for (let i = 0; i < N; i++){
+    const y = 1 - (i / (N - 1)) * 2, r = Math.sqrt(Math.max(0, 1 - y * y));
+    const θ = i * 2.39996323;
+    поз[i*3] = Math.cos(θ) * r * 5000; поз[i*3+1] = y * 5000; поз[i*3+2] = Math.sin(θ) * r * 5000;
+  }
+  const г = new THREE.BufferGeometry();
+  г.setAttribute('position', new THREE.BufferAttribute(поз, 3));
+  scene.add(new THREE.Points(г, new THREE.PointsMaterial({
+    color:0x9FB6D0, size:2.2, sizeAttenuation:false, transparent:true, opacity:.55 })));
+}
+
+/* ── накладки на шар ───────────────────────────────────────────────────
+   Кусок сферы по прямоугольнику долгот и широт, на него — своя картинка.
+   Так область получает собственное разрешение: подсвеченная Атырауская
+   рисуется в свой канвас на семь градусов, и на приближении её кромка
+   остаётся резкой, чего от общей карты планеты не добиться.
+   ──────────────────────────────────────────────────────────────────── */
+function габарит(кольца, поле = 0){
+  let д0 = 180, ш0 = 90, д1 = -180, ш1 = -90;
+  for (const к of кольца) for (const [д, ш] of к){
+    if (д < д0) д0 = д; if (д > д1) д1 = д;
+    if (ш < ш0) ш0 = ш; if (ш > ш1) ш1 = ш;
+  }
+  return [д0 - поле, ш0 - поле, д1 + поле, ш1 + поле];
+}
+
+/* Подсветка складывается со светом, а не замещает его: канвас со свечением
+   через обычную прозрачность даёт по кромке ореола тёмную окантовку — фон
+   картинки просвечивает раньше, чем гаснет размытие. */
+function накладка(г, канвас, высота, { светом = false } = {}){
+  const [д0, ш0, д1, ш1] = г;
+  const геом = new THREE.SphereGeometry(R + высота, 96, 72,
+    рад(д0 + 180), рад(д1 - д0), рад(90 - ш1), рад(ш1 - ш0));
+  const т = new THREE.CanvasTexture(канвас);
+  т.colorSpace = THREE.SRGBColorSpace;
+  т.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  const м = new THREE.MeshBasicMaterial({ map:т, transparent:true, depthWrite:false, opacity:0,
+    blending: светом ? THREE.AdditiveBlending : THREE.NormalBlending });
+  const меш = new THREE.Mesh(геом, м);
+  scene.add(меш);
+  return меш;
+}
+
+/* Канвас под габарит: ширина по долготе, высота — чтобы градус по обеим осям
+   стоил одинаково, иначе линия по широте получается толще, чем по долготе.
+
+   Вместе с канвасом запоминается его плотность: толщину линий и размытие надо
+   задавать в градусах, а не в пикселях канваса. Плотность у накладок разная —
+   область рисуется вчетверо подробнее страны, — и одна и та же «линия в пять
+   пикселей» на области выходила тоньше экранного пикселя и пропадала совсем.
+   ──────────────────────────────────────────────────────────────────── */
+function канвасПод(г, пикНаГрад){
+  const [д0, ш0, д1, ш1] = г;
+  const к = document.createElement('canvas');
+  к.width  = Math.min(4096, Math.round((д1 - д0) * пикНаГрад));
+  к.height = Math.min(4096, Math.round((ш1 - ш0) * пикНаГрад));
+  к.дано = { д0, ш0, д1, ш1, плотность:пикНаГрад };
+  return к;
+}
+const вПикселях = (к, градусов) => градусов * к.дано.плотность;
+const вКанвас = (к, д, ш) => {
+  const { д0, ш0, д1, ш1 } = к.дано;
+  return [(д - д0) / (д1 - д0) * к.width, (ш1 - ш) / (ш1 - ш0) * к.height];
+};
+function обвести(g, к, кольца){
+  g.beginPath();
+  for (const кольцо of кольца){
+    кольцо.forEach((т, i) => {
+      const [x, y] = вКанвас(к, т[0], т[1]);
+      i ? g.lineTo(x, y) : g.moveTo(x, y);
+    });
+    g.closePath();
+  }
+}
+
+/* ── подложка Казахстана: границы всех областей ──────────────────────── */
+const ГАБ_КЗ = габарит(Object.values(ОБЛАСТИ).flatMap(о => о.кольца), 0.6);
+const подложка = (() => {
+  const к = канвасПод(ГАБ_КЗ, 78);
+  const g = к.getContext('2d');
+  g.lineJoin = g.lineCap = 'round';
+
+  // Страна светлее окружения — по ней читается, что подсвечивают именно её
+  for (const о of Object.values(ОБЛАСТИ)){
+    обвести(g, к, о.кольца);
+    g.fillStyle = 'rgba(32,74,104,.34)'; g.fill();
+  }
+  // Свечение кладём каждому контуру: внутри страны соседние засветки гасят
+  // друг друга, а снаружи остаётся ровный ореол по границе государства
+  g.shadowColor = 'rgba(79,227,255,.55)'; g.shadowBlur = вПикселях(к, 0.2);
+  g.strokeStyle = 'rgba(79,227,255,.5)';  g.lineWidth = вПикселях(к, 0.055);
+  for (const о of Object.values(ОБЛАСТИ)){ обвести(g, к, о.кольца); g.stroke(); }
+  g.shadowBlur = 0;
+
+  const м = накладка(ГАБ_КЗ, к, 0.25);
+  м.renderOrder = 2;
+  return м;
+})();
+
+/* ── подсветка одной области ─────────────────────────────────────────── */
+const подсветки = {};                      // ид области → меш накладки
+function подсветкаОбласти(ид, цвет){
+  const ключ = ид + цвет;
+  if (подсветки[ключ]) return подсветки[ключ];
+  const о = ОБЛАСТИ[ид];
+  const г = габарит(о.кольца, 1.1);        // поле под свечение, иначе ореол срежет краем
+  const к = канвасПод(г, 190);
+  const g = к.getContext('2d');
+  g.lineJoin = g.lineCap = 'round';
+
+  const цв = new THREE.Color(цвет);
+  const rgb = [цв.r, цв.g, цв.b].map(v => Math.round(v * 255)).join(',');
+
+  /* Складывается со светом, а не кроет его, поэтому доли берутся щедрее, чем
+     показались бы при обычной прозрачности: на тёмной суше .3 даёт не янтарь,
+     а грязно-бурое пятно. */
+  обвести(g, к, о.кольца);
+  g.fillStyle = `rgba(${rgb},.5)`; g.fill();
+
+  g.shadowColor = `rgba(${rgb},.9)`; g.shadowBlur = вПикселях(к, 0.42);
+  g.strokeStyle = `rgba(${rgb},1)`; g.lineWidth = вПикселях(к, 0.11);
+  обвести(g, к, о.кольца);
+  g.stroke(); g.stroke(); g.stroke();      // ореол набирается повтором
+  g.shadowBlur = 0;
+
+  // светлое ядро линии поверх ореола — по нему кромка читается как граница,
+  // а не как размытое пятно
+  g.strokeStyle = 'rgba(255,244,224,.92)'; g.lineWidth = вПикселях(к, 0.035);
+  обвести(g, к, о.кольца); g.stroke();
+
+  const м = накладка(г, к, 0.45, { светом:true });
+  м.renderOrder = 3;
+  return подсветки[ключ] = м;
+}
+
+/* Вся страна разом — для финального «100%». Отдельная накладка, а не двадцать:
+   двадцать одинаковых ореолов по внутренним границам дают грязь. */
+const подсветкаСтраны = (() => {
+  const к = канвасПод(ГАБ_КЗ, 78);
+  const g = к.getContext('2d');
+  g.lineJoin = g.lineCap = 'round';
+  const rgb = '53,208,194';
+  for (const о of Object.values(ОБЛАСТИ)){
+    обвести(g, к, о.кольца);
+    g.fillStyle = `rgba(${rgb},.26)`; g.fill();
+  }
+  g.shadowColor = `rgba(${rgb},.8)`; g.shadowBlur = вПикселях(к, 0.28);
+  g.strokeStyle = `rgba(${rgb},.95)`; g.lineWidth = вПикселях(к, 0.07);
+  for (const о of Object.values(ОБЛАСТИ)){ обвести(g, к, о.кольца); g.stroke(); }
+  g.shadowBlur = 0;
+  const м = накладка(ГАБ_КЗ, к, 0.45, { светом:true });
+  м.renderOrder = 3;
+  return м;
+})();
+
+/* ── метки ─────────────────────────────────────────────────────────────
+   Каждый актив — точка на своей координате и мини-плашка с названием, между
+   ними поводок. Плашка не приколочена к точке: семь промыслов Мангистауской
+   стоят кучей, и подписи, поставленные каждая у своей точки, слиплись бы в
+   нечитаемое пятно. Поэтому они разводятся по вертикали в экранных пикселях,
+   а связь с точкой держит поводок.
+   ──────────────────────────────────────────────────────────────────── */
+const слойМеток = document.getElementById('метки');
+const поводки = document.getElementById('поводки');
+const NS = 'http://www.w3.org/2000/svg';
+const метки = [];
+
+const ОТСТУП = 34;    // от точки до края плашки, пикселей
+const ЗАЗОР  = 6;     // между соседними плашками
+
+/* Силуэт буровой вышки: две ноги, две перекладины, основание. Рисуется, а не
+   ставится символом — в моноширинном шрифте подходящего знака нет, а картинку
+   ради десяти пикселей класть в репозиторий незачем. */
+function вышка(){
+  const s = document.createElementNS(NS, 'svg');
+  s.setAttribute('viewBox', '0 0 10 13');
+  const p = document.createElementNS(NS, 'path');
+  p.setAttribute('d', 'M5 0.6 L8.6 11 M5 0.6 L1.4 11 M2.6 8 H7.4 M3.5 4.6 H6.5 M0.5 11.8 H9.5');
+  p.setAttribute('stroke-linecap', 'round');
+  s.appendChild(p);
+  return s;
+}
+
+for (const а of АКТИВЫ){
+  const цвет = а.волна === 1 ? ЦВЕТ.янтарь : ЦВЕТ.циан;
+  const пилот = а.волна === 1;
+
+  const тчк = document.createElement('i');
+  тчк.className = 'тчк' + (пилот ? ' пилот' : '');
+  тчк.style.setProperty('--мц', цвет);
+
+  const пдп = document.createElement('b');
+  пдп.className = 'пдп' + (пилот ? ' пилот' : '') + (а.сторона === 'лево' ? ' слева' : '');
+  пдп.style.setProperty('--мц', цвет);
+  пдп.appendChild(вышка());
+  пдп.appendChild(document.createTextNode(а.имя));
+
+  const линия = document.createElementNS(NS, 'line');
+  линия.setAttribute('stroke', цвет);
+
+  поводки.appendChild(линия);
+  слойМеток.append(тчк, пдп);
+
+  а.метка = { тчк, пдп, линия, поз:наШар(а.т[0], а.т[1], R + 0.6),
+              сторона:а.сторона, видна:false };
+  метки.push(а.метка);
+}
+
+/* Размеры плашек меряются один раз: чтение offsetWidth каждый кадр заставляет
+   браузер пересчитывать разметку двенадцать раз за кадр на ровном месте.
+   Сбрасываются при смене размера окна — там кегль и перенос могут поехать. */
+function померить(){
+  for (const м of метки){ м.ш = м.пдп.offsetWidth; м.в = м.пдп.offsetHeight; }
+}
+addEventListener('resize', померить);
+
+let сПодписями = false;
+
+/* Точка на шаре видна, если она на обращённой к камере половине. Условие
+   p·C > R² — та же проверка горизонта, только без тригонометрии. */
+function разложитьМетки(){
+  const R2 = R * R;
+  const п = new THREE.Vector3();
+  const видимые = [];
+
+  for (const м of метки){
+    const впереди = м.видна && м.поз.dot(camera.position) > R2;
+    if (впереди) п.copy(м.поз).project(camera);
+    const виден = впереди && п.z <= 1;
+    м.тчк.classList.toggle('on', виден);
+    if (!виден){ м.пдп.classList.remove('on'); м.линия.style.opacity = 0; continue; }
+    м.x = (п.x * 0.5 + 0.5) * innerWidth;
+    м.y = (-п.y * 0.5 + 0.5) * innerHeight;
+    м.тчк.style.left = м.x + 'px';
+    м.тчк.style.top  = м.y + 'px';
+    видимые.push(м);
+  }
+
+  if (!сПодписями){
+    for (const м of видимые){ м.пдп.classList.remove('on'); м.линия.style.opacity = 0; }
+    return;
+  }
+  if (видимые.length && !видимые[0].ш) померить();
+
+  /* Развод: идём сверху вниз и опускаем плашку под те из уже поставленных,
+     с которыми она перекрывается. Сравниваются только пересекающиеся по
+     горизонтали — иначе подпись у Акшабулака уехала бы вниз за компанию с
+     мангистауской колонкой, до которой ей триста пикселей. */
+  видимые.sort((a, b) => a.y - b.y);
+  const поставленные = [];
+  let клан = 0;
+  for (const м of видимые){
+    м.лев = м.сторона === 'лево' ? м.x - ОТСТУП - м.ш : м.x + ОТСТУП;
+    м.клан = 0;
+    let y = м.y;
+    for (const п2 of поставленные){
+      if (м.лев + м.ш < п2.лев || п2.лев + п2.ш < м.лев) continue;   // не пересекаются
+      const нужно = (м.в + п2.в) / 2 + ЗАЗОР;
+      if (Math.abs(y - п2.yп) < нужно){
+        y = п2.yп + нужно;
+        м.клан = п2.клан || (п2.клан = ++клан);   // подписи, которые двигали друг друга
+      }
+    }
+    м.yп = y;
+    поставленные.push(м);
+  }
+
+  /* Развод идёт только вниз, поэтому колонка целиком уползает от своих точек:
+     у мангистауской кучи нижняя подпись оказывалась на сотню пикселей ниже
+     промысла. Поднимаем каждую столкнувшуюся группу на средний её сдвиг —
+     тогда колонка садится по центру своих точек, а зазоры внутри сохраняются. */
+  for (let к = 1; к <= клан; к++){
+    const свои = поставленные.filter(м => м.клан === к);
+    if (!свои.length) continue;
+    const сдвиг = свои.reduce((s, м) => s + (м.yп - м.y), 0) / свои.length;
+    for (const м of свои) м.yп -= сдвиг;
+  }
+
+  for (const м of видимые){
+    м.пдп.style.left = м.лев + 'px';
+    м.пдп.style.top  = (м.yп - м.в / 2) + 'px';
+    м.пдп.classList.add('on');
+    const край = м.сторона === 'лево' ? м.лев + м.ш : м.лев;
+    м.линия.setAttribute('x1', м.x);   м.линия.setAttribute('y1', м.y);
+    м.линия.setAttribute('x2', край);  м.линия.setAttribute('y2', м.yп);
+    м.линия.style.opacity = 0.75;
+  }
+}
+
+/* ── плашка и титр ─────────────────────────────────────────────────── */
+const плашка = document.getElementById('плашка');
+const титр   = document.getElementById('титр');
+
+function собратьПлашку(п, цвет){
+  if (!п){ плашка.classList.remove('on'); return; }
+  плашка.style.setProperty('--цв', цвет);
+  плашка.querySelector('.год').textContent = п.год;
+  плашка.querySelector('.имя').textContent = п.имя;
+  плашка.querySelector('.под').textContent = п.под || '';
+
+  const строки = плашка.querySelector('.строки');
+  строки.textContent = '';
+  строки.style.display = п.список ? '' : 'none';
+  if (п.список){
+    for (const ид of Object.keys(ИМЕНА_ОБЛ)){
+      const свои = АКТИВЫ.filter(а => а.обл === ид);
+      if (!свои.length) continue;
+      const г = document.createElement('div'); г.className = 'гр';
+      const о = document.createElement('div'); о.className = 'об';
+      // ДЗО в шапке группы, а не при каждом активе: в Мангистауской их четыре
+      // на семь промыслов, и построчное повторение съело бы всю плашку
+      о.textContent = ИМЕНА_ОБЛ[ид] + ' · ' + [...new Set(свои.map(с => с.дзо))].join(', ');
+      const а = document.createElement('div'); а.className = 'ак';
+      а.textContent = свои.map(с => с.полное || с.имя).join(' · ');
+      г.append(о, а);
+      строки.appendChild(г);
+    }
+  }
+
+  const итог = плашка.querySelector('.итог');
+  итог.style.display = п.итог ? '' : 'none';
+  if (п.итог){
+    итог.innerHTML = '';
+    const v = document.createElement('div'); v.className = 'v'; v.textContent = п.итог[0];
+    const l = document.createElement('div'); l.className = 'l'; l.textContent = п.итог[1];
+    итог.append(v, l);
+  }
+  плашка.classList.add('on');
+}
+
+function собратьТитр(т, цвет){
+  if (!т){ титр.classList.remove('on'); return; }
+  титр.style.setProperty('--цв', цвет);
+  титр.querySelector('.k').textContent = т.k;
+  титр.querySelector('.t').textContent = т.t;
+  титр.classList.add('on');
+}
+
+/* ── шкала ─────────────────────────────────────────────────────────── */
+const шкала = document.getElementById('шкала');
+АКТ.forEach(() => шкала.appendChild(document.createElement('i')));
+
+/* ── камера ────────────────────────────────────────────────────────────
+   Летим не по прямой между позициями, а по дуге: точка прицела едет по
+   поверхности, высота меняется отдельно. Прямая между двумя точками над
+   шаром ныряет к поверхности и на длинном перелёте выглядит как провал.
+   ──────────────────────────────────────────────────────────────────── */
+const камТек  = { ш:46, д:69, даль:900 };
+const камЦель = { ...АКТ[0].камера };
+let перелёт = null;
+
+function поставитьКамеру(){
+  camera.position.copy(наШар(камТек.д, камТек.ш, камТек.даль));
+  camera.lookAt(0, 0, 0);
+}
+
+function летимК(к, время = 1700){
+  перелёт = { от:{ ...камТек }, до:{ ...к }, t0:performance.now(), длит:время };
+  Object.assign(камЦель, к);
+}
+
+const плавно = t => t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
+
+function двигатьКамеру(сейчас){
+  if (!перелёт) return;
+  const t = Math.min(1, (сейчас - перелёт.t0) / перелёт.длит);
+  const k = плавно(t);
+  const { от, до } = перелёт;
+  // долгота идёт кратчайшей дугой: без этого перелёт через 180° разворачивает
+  // планету в обратную сторону через весь глобус
+  let dд = ((до.д - от.д + 540) % 360) - 180;
+  камТек.д = от.д + dд * k;
+  камТек.ш = от.ш + (до.ш - от.ш) * k;
+  // высота идёт по дуге вверх: на середине перелёта камера приподнимается,
+  // и уход с области на страну читается как отлёт, а не как рывок вбок
+  const дуга = Math.sin(Math.PI * t) * Math.abs(до.даль - от.даль) * 0.22;
+  камТек.даль = от.даль + (до.даль - от.даль) * k + дуга;
+  if (t >= 1) перелёт = null;
+  поставитьКамеру();
+}
+
+/* ── этапы ─────────────────────────────────────────────────────────── */
+let этап = -1;
+/* Постоянная времени набора прозрачности, в секундах. Считается от времени, а
+   не от кадра: доля на кадр привязала бы скорость гашения к частоте, и на
+   слабой машине область гасла бы вчетверо дольше, чем на сильной. */
+const ПОСТОЯННАЯ = 0.22;
+const цели = new Map();                  // меш → нужная прозрачность
+
+function показать(и, { мгновенно = false } = {}){
+  и = Math.max(0, Math.min(АКТ.length - 1, и));
+  if (и === этап) return;
+  этап = и;
+  const э = АКТ[и];
+
+  летимК(э.камера, мгновенно ? 0 : 1700);
+  if (мгновенно){ Object.assign(камТек, э.камера); поставитьКамеру(); перелёт = null; }
+
+  // накладки: всё гасим, нужное зажигаем
+  цели.clear();
+  цели.set(подложка, 1);
+  цели.set(подсветкаСтраны, 0);
+  for (const м of Object.values(подсветки)) цели.set(м, 0);
+  if (э.подсветка === 'вся страна'){
+    цели.set(подсветкаСтраны, 1);
+  } else {
+    for (const { обл, цвет } of э.подсветка) цели.set(подсветкаОбласти(обл, цвет), 1);
+  }
+
+  // метки
+  const н = э.метки;
+  сПодписями = !!н && !!н.подписи;
+  for (const а of АКТИВЫ){
+    а.метка.видна = !!н && а.волна <= н.волна;
+    if (!а.метка.видна){
+      а.метка.тчк.classList.remove('on');
+      а.метка.пдп.classList.remove('on');
+      а.метка.линия.style.opacity = 0;
+    }
+  }
+
+  // плашка и титр: содержимое меняем в паузе, пока текст погашен
+  плашка.classList.add('смена');
+  setTimeout(() => { собратьПлашку(э.плашка, э.цвет); плашка.classList.remove('смена'); }, мгновенно ? 0 : 280);
+  собратьТитр(э.титр, э.цвет);
+
+  [...шкала.children].forEach((э2, n) => э2.style.setProperty('--p', n <= и ? 1 : 0));
+  document.getElementById('дальше').classList.toggle('on', и < АКТ.length - 1);
+  родителю({ этап:и, всего:АКТ.length, ключ:э.ключ });
+}
+
+/* ── кадровый цикл ─────────────────────────────────────────────────── */
+let прошлыйКадр = 0;
+function кадр(сейчас){
+  requestAnimationFrame(кадр);
+  // шаг времени подрезан сверху: после переключения вкладки браузер отдаёт
+  // разрыв в несколько секунд, и без подрезки накладки прыгнули бы разом
+  const dt = Math.min(0.1, прошлыйКадр ? (сейчас - прошлыйКадр) / 1000 : 0.016);
+  прошлыйКадр = сейчас;
+  const доля = 1 - Math.exp(-dt / ПОСТОЯННАЯ);
+
+  двигатьКамеру(сейчас);
+  for (const [м, ц] of цели){
+    const o = м.material.opacity;
+    if (Math.abs(o - ц) > 0.002) м.material.opacity = o + (ц - o) * доля;
+    else м.material.opacity = ц;
+    м.visible = м.material.opacity > 0.004;
+  }
+  разложитьМетки();
+  renderer.render(scene, camera);
+}
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+/* ── управление ────────────────────────────────────────────────────────
+   Этап живёт в <iframe> показа, и клавиатура там одна на всех: родитель
+   ловит нажатие и присылает шаг. Свои обработчики оставлены, чтобы файл
+   открывался и отдельно.
+   ──────────────────────────────────────────────────────────────────── */
+const родителю = что => {
+  if (parent !== window) parent.postMessage({ глобус:true, ...что }, '*');
+};
+
+function шаг(куда){
+  const н = этап + куда;
+  if (н < 0){ родителю({ назад:true }); return; }   // с первого этапа — обратно в показ
+  if (н >= АКТ.length) return;
+  показать(н);
+}
+
+addEventListener('keydown', e => {
+  const c = e.code;
+  if (c === 'ArrowRight' || c === 'Enter' || c === 'NumpadEnter' ||
+      c === 'Space' || c === 'PageDown'){ e.preventDefault(); шаг(+1); }
+  if (c === 'ArrowLeft' || c === 'Backspace' || c === 'PageUp'){ e.preventDefault(); шаг(-1); }
+  if (c === 'KeyF'){
+    document.fullscreenElement ? document.exitFullscreen()
+                               : document.documentElement.requestFullscreen();
+  }
+});
+addEventListener('click', () => шаг(+1));
+addEventListener('message', e => {
+  const д = e.data;
+  if (!д || !д.глобусу) return;
+  if (д.старт) начать();
+  if (д.шаг)   шаг(д.шаг);
+  if (д.сброс){ этап = -1; показать(0, { мгновенно:true }); }
+});
+
+/* ── старт ─────────────────────────────────────────────────────────────
+   Внутри показа этап поднимается заранее, а тронуться обязан не по загрузке,
+   а по команде: иначе отъезд от промысла отыграет в скрытом кадре, и к моменту
+   наплыва на экране будет стоять неподвижная карта.
+   ──────────────────────────────────────────────────────────────────── */
+const ожидание = document.getElementById('ожидание');
+// открывающий кадр — у самого промысла; если у этапа своего входа нет,
+// начинаем прямо с его рамки
+const ВХОД = АКТ[0].вход || АКТ[0].камера;
+Object.assign(камТек, ВХОД);
+поставитьКамеру();
+requestAnimationFrame(кадр);
+
+function начать(){
+  if (этап >= 0) return;
+  Object.assign(камТек, ВХОД);
+  показать(0);
+  летимК(АКТ[0].камера, 3000);      // отъезд от скважины к области
+  ожидание.classList.add('gone');
+  setTimeout(() => { ожидание.style.display = 'none'; }, 700);
+}
+
+/* `?этап=N` открывает нужный этап сразу — им подгоняются рамки камеры и
+   снимаются контрольные кадры, не проходя показ целиком. */
+const сразу = new URLSearchParams(location.search).get('этап');
+if (сразу !== null){
+  показать(+сразу, { мгновенно:true });
+  ожидание.classList.add('gone');
+  setTimeout(() => { ожидание.style.display = 'none'; }, 700);
+} else if (parent !== window) родителю({ готов:true });   // ждём команды показа
+else начать();
+
+window.__dbg = { renderer, scene, camera, THREE, ЭТАПЫ, АКТ, АКТИВЫ, ОБЛАСТИ,
+                 камТек, камЦель, летимК, показать, метки, подсветки };
+</script>
+</body>
+</html>

@@ -38,6 +38,15 @@ Three iterations of the main slide, each self-contained:
 
 `_glb_viewer.html` — dev utility to inspect any `.glb` file; pass `?f=filename.glb` in the URL.
 
+`тиражирование.html` — the act that follows the show's finale: a procedural three.js globe
+with Kazakhstan oblast highlights and the 12 priority assets. No Earth textures — the
+sphere is a canvas equirect map, city lights are points, the limb is a fresnel shell; all
+data is the ~313 KB under `тиражирование/данные/`. Loaded by `demo_with_map.html` in an
+`<iframe>` and stepped via `postMessage` (parent → `{глобусу:true, шаг|старт|сброс}`,
+child → `{глобус:true, готов|назад}`). Open standalone with `?этап=N` to jump to a step.
+See [тиражирование/ТИРАЖИРОВАНИЕ.md](тиражирование/ТИРАЖИРОВАНИЕ.md) — in particular why
+GLSL identifiers there are ASCII and why line widths are expressed in degrees.
+
 GLBs are loaded directly from the `.glb` files (v3 maps layer ids → filenames in `GLB_FILES`; v2 loads `модель_i23d.glb`). This is lighter on RAM than the earlier approach of inlining base64 payloads as JS globals — if you see references to `window.__GLB_B64` / `window.__GLB_LAYERS` or `модель_данные.js` / `слои_данные.js`, they are gone.
 
 ## Architecture
