@@ -27,6 +27,9 @@
     background:var(--bg0);
     transition:transform .55s cubic-bezier(.22,.61,.36,1)}
   #film.up{transform:translateY(-10%)}
+  /* финал: кадр остаётся на месте, панель эффектов ложится поверх правой трети —
+     кадр 10 под это и скомпонован, блок в нём уже смещён влево */
+  #film.влево{transform:none}
   #vig{position:fixed;inset:0;pointer-events:none;z-index:4;
     background:
       radial-gradient(ellipse at 50% 45%,transparent 45%,rgba(5,8,16,.55) 100%),
@@ -344,7 +347,10 @@ const TAKES = [
   /* Последний прогон идёт без остановок: промысел, карта объектов, скважина и
      переход в цифровое — одно движение. Подпись не ждёт конца такта, а всплывает
      по ходу, на блоке двойника, и дальше держится до самого финала. */
-  { from:16.458, to:37.10,
+  /* Последний прогон длинный — двадцать секунд одного движения. Идёт в
+     полтора раза быстрее: разглядывать там нечего, а пауза докладчика
+     приходится уже на собранный двойник в конце. */
+  { from:16.458, to:37.10, rate:1.5,
     титр:{ с:31.917,
       k:'Целевой образ',
       t:'Цифровой двойник месторождения',
@@ -363,8 +369,6 @@ const TAKES = [
       ],
       итоги:[
         ['окт. 2026', 'промышленная эксплуатация пилота Молдабек В.'],
-        ['12',        'приоритетных активов, 7 ДЗО — 2027–2028'],
-        ['100%',      'добывающих активов к 2028 году'],
       ],
     },
     c:'#9B7BE8' },
@@ -453,11 +457,10 @@ function собратьЭффекты(э){
 // цифры в финале показываем всегда (переключатель со стартового экрана убран)
 const эффектыВключены = () => true;
 
-function обновитьЭффекты(t, время){
-  if (!t.эффекты || !эффектыВключены()){ effects.classList.remove('on'); return; }
-  собратьЭффекты(t.эффекты);
-  effects.classList.toggle('on', время >= t.эффекты.с - EPS);
-}
+/* Цифры больше не выходят по ходу последнего такта: сначала докладчик даёт
+   зрителю рассмотреть собранный двойник, и только следующим нажатием
+   выкатывает эффекты. Поэтому здесь панель всегда убрана — её включает финал. */
+function обновитьЭффекты(){ effects.classList.remove('on'); }
 
 /* Подпись, привязанная к моменту внутри такта: выходит по ходу движения и
    не требует остановки — такт при этом доигрывает как обычно. */
@@ -708,6 +711,7 @@ function hold(){
 
 /* ── вперёд ──────────────────────────────────────────────────────────── */
 function forward(){
+  if (phase === 'финал1' || phase === 'финал2') return финалДальше();
   if (phase === 'done' || phase === 'idle') return;
 
   // Нажали посреди такта — доводим его до конца ускорением, а не прыжком:
@@ -764,26 +768,45 @@ function backward(){
    на живую сцену: ни загрузки, ни вспышки, а наплыв заодно съедает
    остаточную разницу между кадром ленты и рендером.
    ──────────────────────────────────────────────────────────────────── */
+/* Финал идёт в три нажатия, а не одним куском:
+   1) последний кадр стоит по центру — зритель смотрит на собранный двойник;
+   2) кадр уходит влево, справа выкатываются эффекты;
+   3) панель убирается, остаётся кнопка перехода к 3D-модели.
+   Раньше цифры выскакивали вместе с последним кадром и перебивали его. */
 function finale(){
   cancelAnimationFrame(raf);
   clearTimeout(boundary);
-  phase = 'done';
+  phase = 'финал1';
   film.pause();
   fillTicks(TAKES.length);
   cap.classList.remove('on');
   chain.classList.remove('on');
   mark.classList.remove('on');
-  nudge.classList.remove('on');
+  film.classList.remove('up');
+  effects.classList.remove('on');
+  nudge.classList.add('on');            // подсказка: показ ещё не закончен
 
-  // Показ заканчивается на последнем кадре ленты, а не уходом в модель:
-  // на экране остаются цифры, к двойнику докладчик переходит кнопкой.
   const т = TAKES[TAKES.length - 1];
   const конец = т.to - 0.05;
   if (Math.abs(film.currentTime - конец) > 0.2) { try { film.currentTime = конец; } catch(_){} }
-  if (т.эффекты){ собратьЭффекты(т.эффекты); effects.classList.add('on'); }
-
   $('#skip').style.display = 'none';
-  $('#tov1').style.display = 'inline-flex';
+}
+
+function финалДальше(){
+  if (phase === 'финал1'){
+    phase = 'финал2';
+    film.classList.add('влево');
+    const т = TAKES[TAKES.length - 1];
+    if (т.эффекты){ собратьЭффекты(т.эффекты); effects.classList.add('on'); }
+    return;
+  }
+  if (phase === 'финал2'){
+    phase = 'done';
+    effects.classList.remove('on');
+    film.classList.remove('влево');
+    nudge.classList.remove('on');
+    $('#tov1').style.display = 'inline-flex';   // уход к модели — по кнопке
+  }
 }
 
 /* ── управление ──────────────────────────────────────────────────────── */
@@ -793,6 +816,11 @@ $('#tov1').addEventListener('click', e => e.stopPropagation());
 
 addEventListener('keydown', e => {
   if (phase === 'idle' || phase === 'done') return;
+  if (phase === 'финал1' || phase === 'финал2'){
+    const c = e.code;
+    if (c === 'ArrowRight' || c === 'Enter' || c === 'Space'){ e.preventDefault(); финалДальше(); }
+    return;
+  }
   const c = e.code;
   if (c === 'ArrowRight' || c === 'Enter' || c === 'NumpadEnter' ||
       c === 'Space' || c === 'PageDown'){ e.preventDefault(); forward(); }
@@ -804,7 +832,9 @@ addEventListener('keydown', e => {
   }
 });
 
-addEventListener('click', () => { if (phase === 'play' || phase === 'hold') forward(); });
+addEventListener('click', () => {
+  if (phase === 'play' || phase === 'hold' || phase === 'финал1' || phase === 'финал2') forward();
+});
 
 /* ── старт ───────────────────────────────────────────────────────────── */
 const load = $('#load');
@@ -822,6 +852,9 @@ film.addEventListener('progress', () => {
    докладчик читает вступление, а не под уже играющей лентой. Дальше слайд
    спит в редком рендере до финала. */
 slide.src = SLIDE;
+
+// служебный хук: даёт прогнать финал без ожидания ленты
+window.__demo = { finale, финалДальше, forward, playTake, TAKES, get фаза(){ return phase; } };
 
 /* Показ не должен стартовать на недогруженной ленте: первый такт дёрнется или
    не тронется вовсе. Если данных мало — кнопка честно говорит, что ждём, и
