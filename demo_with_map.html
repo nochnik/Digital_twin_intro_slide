@@ -294,13 +294,13 @@
      панель эффектов и планета, знак съезжает в правый нижний угол и остаётся
      там до конца. Тень держит белые буквы читаемыми на светлых кадрах карты. */
   #знак{position:fixed;right:26px;top:64px;z-index:30;pointer-events:none;
-    height:42px;opacity:.32;filter:drop-shadow(0 1px 3px rgba(0,0,0,.6));
+    height:50px;opacity:.32;filter:drop-shadow(0 1px 3px rgba(0,0,0,.6));
     transition:top .8s cubic-bezier(.22,.61,.36,1)}
   #знак svg{display:block;height:100%;width:auto}
   /* Съезд вниз задаётся соседним селектором: знак стоит в разметке после всех
      четырёх слоёв, поднимающих правый верхний угол, и отдельного кода не надо. */
   #справка.on ~ #знак, #effects.on ~ #знак,
-  #slide.on ~ #знак, #globe.on ~ #знак{top:calc(100% - 58px)}   /* 42 высота + 16 поле */
+  #slide.on ~ #знак, #globe.on ~ #знак{top:calc(100% - 66px)}   /* 50 высота + 16 поле */
 </style>
 </head>
 <body>
