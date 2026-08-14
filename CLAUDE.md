@@ -40,12 +40,23 @@ Three iterations of the main slide, each self-contained:
 
 `тиражирование.html` — the act that follows the show's finale: a procedural three.js globe
 with Kazakhstan oblast highlights and the 12 priority assets. No Earth textures — the
-sphere is a canvas equirect map, city lights are points, the limb is a fresnel shell; all
-data is the ~313 KB under `тиражирование/данные/`. Loaded by `demo_with_map.html` in an
+sphere is a canvas equirect map and the limb is a fresnel shell; all
+data is the ~313 KB under `тиражирование/данные/`. Kazakhstan's outline on the sphere is
+drawn from the oblast data, not from `мир.json` — the two disagree by up to 70 km at
+close zoom. Loaded by `demo_with_map.html` in an
 `<iframe>` and stepped via `postMessage` (parent → `{глобусу:true, шаг|старт|сброс}`,
 child → `{глобус:true, готов|назад}`). Open standalone with `?этап=N` to jump to a step.
 See [тиражирование/ТИРАЖИРОВАНИЕ.md](тиражирование/ТИРАЖИРОВАНИЕ.md) — in particular why
 GLSL identifiers there are ASCII and why line widths are expressed in degrees.
+
+`demo_with_map.html` — the show: one continuous video (`переход/подводка.mp4`) cut into
+takts by the `TAKES` table, then a three-press finale (twin → figures → `тиражирование.html`).
+`?такт=N` starts it from takt N instead of the beginning and keeps everything else intact;
+instead of rolling by itself it holds on the takt's first frame (paused, caption up) until
+a click or a forward key, and won't rewind past its own start. `показ_с_пилота.html` is a thin redirect to `?такт=2` — do NOT fork the show
+to make a new cut, add a link like that one. Seeking mid-film needs the server to answer
+Range requests; where it doesn't (the local dev server), the cut fetches the whole 49 MB
+and plays it from a blob, so `?такт=N` waits longer to start than the full show does.
 
 GLBs are loaded directly from the `.glb` files (v3 maps layer ids → filenames in `GLB_FILES`; v2 loads `модель_i23d.glb`). This is lighter on RAM than the earlier approach of inlining base64 payloads as JS globals — if you see references to `window.__GLB_B64` / `window.__GLB_LAYERS` or `модель_данные.js` / `слои_данные.js`, they are gone.
 
