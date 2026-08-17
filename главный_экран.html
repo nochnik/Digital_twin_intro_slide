@@ -5,21 +5,22 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Цифровой двойник на базе ИС «ABAI» · главный экран</title>
 <!--
-  Главный экран показа. Стоит перед 3D-макетом и закрывает разрыв, который
-  вылезал на репетиции: первые слова Председателя правления идут ещё без своей
-  картинки, а на экране в это время уже крутилась модель.
+  Главный экран показа, перед 3D-макетом. Закрывает разрыв: первые слова
+  Председателя правления идут ещё без своей картинки.
 
-  Содержание — два тезиса и кнопка, больше ничего. Оформление держит остальное:
-  сетка голограммы, световой купол, угловые засечки и въезд элементов. Без них
-  экран читался как выжимка из документа, набранная крупным кеглем.
+  На экране только то, что зритель считывает глазами: заголовок, один тезис,
+  три шага и цепочка внизу. Абзацы речи сюда не выведены намеренно — это текст
+  спикера, не текст слайда. Зритель видит «сложные запасы → цифровизация →
+  двойник → решения заранее», подробности звучат вслух.
 
-  Всё рисуется CSS: ни картинок, ни шрифтов извне — показ обязан подняться без
-  интернета.
+  Композиция: набор занимает верхние две трети, нижняя треть оставлена
+  фотографии — там промысел переходит в свою цифровую копию. Так текст стоит на
+  чистом небе, а снимок работает под ним и не спорит за внимание.
 -->
 <style>
   :root{
     --cyan:#4FE3FF; --amber:#F0AE4A; --teal:#35D0C2;
-    --bg0:#050810; --bg1:#0C1626; --line:rgba(140,170,210,.22);
+    --bg0:#050810; --line:rgba(140,170,210,.22);
     --txt:#D7E2F2; --dim:#7C8DA6;
     --mono:Consolas,"Courier New",monospace; --serif:Cambria,Georgia,serif;
     --ui:"Segoe UI",Calibri,sans-serif;
@@ -29,122 +30,164 @@
     background:var(--bg0)}
 
   /* ── фон ───────────────────────────────────────────────────────────────
-     Кадр по теме вступительных слов, а не отвлечённая красота: ночной зрелый
-     промысел слева переходит в свою цифровую копию справа — каркасы качалок и
-     резервуаров, под поверхностью просвечивают пласты. Ровно то, о чём речь:
-     сложные запасы и переход к цифровым решениям.
+     Кадр по теме вступительных слов: ночной зрелый промысел слева по шву
+     переходит в цифровую копию справа, под поверхностью просвечивают пласты.
+     Higgsfield, nano_banana_pro, без единой надписи — текст живёт в HTML.
 
-     Сгенерирован через Higgsfield (nano_banana_pro), без единой надписи —
-     весь текст живёт в HTML и переводится без перегенерации. Исходник 2752 px
-     лежит рядом, в показ идёт сжатая копия 1920×1072 на 313 КБ.
-
-     Поверх — затемняющая пелена: снимок сам по себе слишком «занят» под
-     набор, и без неё буллеты садились прямо на каркасы качалок.
+     Пелена в два слоя, значения подобраны замером яркости по композиту:
+     сверху глухо (там набор), к низу проясняется, чтобы промысел читался.
      ──────────────────────────────────────────────────────────────────── */
   .фон{position:fixed;inset:0;overflow:hidden;pointer-events:none}
-
   .кадр{position:absolute;inset:0;
     background:url("images/фон_главный.jpg") center/cover no-repeat}
-
-  /* Пелена в две ступени: пятно под набором и общий наклон сверху вниз.
-     Значения подобраны замером яркости по композиту, а не на глаз. Первая
-     версия давила равномерно и гасила промысел с каркасами до 14 при 40 в
-     исходнике — фон превращался в текстуру, а он тут по делу. Сейчас под
-     текстом 16 (белым по нему больше 13:1), на промысле 24–32, в небе 10. */
   .пелена{position:absolute;inset:0;
     background:
-      radial-gradient(ellipse 50% 33% at 50% 40%,
-        rgba(5,8,16,.92) 0%, rgba(5,8,16,.68) 62%, transparent 100%),
       linear-gradient(to bottom,
-        rgba(5,8,16,.80) 0%, rgba(5,8,16,.52) 30%,
-        rgba(5,8,16,.10) 60%, rgba(5,8,16,.26) 100%)}
-
+        rgba(5,8,16,.93) 0%, rgba(5,8,16,.90) 34%,
+        rgba(5,8,16,.66) 52%, rgba(5,8,16,.20) 74%,
+        rgba(5,8,16,.42) 100%)}
   .виньетка{position:absolute;inset:0;
-    background:radial-gradient(ellipse at 50% 44%, transparent 52%, rgba(5,8,16,.72) 100%)}
+    background:radial-gradient(ellipse at 50% 40%, transparent 54%, rgba(5,8,16,.7) 100%)}
 
-  /* ── рамка кадра ───────────────────────────────────────────────────────
-     Угловые засечки — тот же приём, что на голограмме слоёв в макете: кадр
-     читается как визир, а не как страница.
-     ──────────────────────────────────────────────────────────────────── */
-  .визир{position:fixed;inset:30px;pointer-events:none;z-index:2}
-  .визир i{position:absolute;width:34px;height:34px;
-    border:1px solid rgba(140,170,210,.34)}
+  /* Угловые засечки — тот же приём, что на голограмме слоёв в макете: кадр
+     читается как визир, а не как страница документа. */
+  .визир{position:fixed;inset:28px;pointer-events:none;z-index:2}
+  .визир i{position:absolute;width:32px;height:32px;border:1px solid rgba(140,170,210,.3)}
   .визир i:nth-child(1){left:0;top:0;border-right:0;border-bottom:0}
   .визир i:nth-child(2){right:0;top:0;border-left:0;border-bottom:0}
   .визир i:nth-child(3){left:0;bottom:0;border-right:0;border-top:0}
   .визир i:nth-child(4){right:0;bottom:0;border-left:0;border-top:0}
 
-  /* ── содержание ────────────────────────────────────────────────────── */
-  /* Блок уведён в верхнюю треть нижним отступом: ниже на снимке горизонт и
-     каркасы качалок, и тезисы садились прямо на них. Вверху чистое небо —
-     текст стоит на нём, промысел работает под ним. */
-  .лист{position:relative;z-index:3;height:100%;display:flex;flex-direction:column;
-    align-items:center;justify-content:center;padding:40px 56px 240px;text-align:center}
-  @media (max-height:780px){ .лист{padding-bottom:150px} }
+  /* ── лист ──────────────────────────────────────────────────────────────
+     Прижат к верху, а не отцентрован: низ кадра отдан фотографии.
+     ──────────────────────────────────────────────────────────────────── */
+  .лист{position:relative;z-index:3;height:100%;
+    display:flex;flex-direction:column;padding:58px 78px 0}
 
-  /* Засечка над заголовком: короткий штрих вместо надзаголовка-текста. */
-  .штрих{width:64px;height:2px;background:var(--cyan);
-    box-shadow:0 0 16px rgba(79,227,255,.7);margin-bottom:26px}
-
-  h1{font-family:var(--serif);font-size:46px;font-weight:600;line-height:1.14;
-    text-shadow:0 2px 30px rgba(5,12,24,.9)}
-  h1 b{color:var(--cyan);text-shadow:0 0 34px rgba(79,227,255,.45)}
-
-  .тезисы{margin-top:42px;display:flex;flex-direction:column;gap:20px;
-    text-align:left;max-width:880px}
-  /* Буллет — засечка слева: точка в этой типографике выглядит пылинкой. */
-  /* Тень под глифами обязательна. Замер по композиту: под третьим тезисом
-     проходит яркая линия каркаса качалки в 52 единицы, и белый по ней даёт
-     всего 4,5:1 — на проекторе это уже граница читаемости. Тень отделяет буквы
-     от чего угодно за ними, не затемняя сам снимок дальше. */
-  .т{position:relative;padding-left:32px;font-size:24px;line-height:1.42;color:#EAF2FF;
+  /* ── шапка ─────────────────────────────────────────────────────────── */
+  .штрих{width:58px;height:2px;background:var(--cyan);
+    box-shadow:0 0 16px rgba(79,227,255,.7)}
+  h1{font-family:var(--serif);font-size:42px;font-weight:600;line-height:1.12;
+    margin-top:22px;text-shadow:0 2px 26px rgba(5,12,24,.95)}
+  h1 b{color:var(--cyan);text-shadow:0 0 32px rgba(79,227,255,.45)}
+  /* Главный тезис — крупнее подзаголовка и не капсом: это мысль, а не рубрика */
+  .тезис{font-size:21px;color:#EAF2FF;margin-top:14px;line-height:1.4;max-width:56ch;
     text-shadow:0 0 3px rgba(5,8,16,.95), 0 1px 14px rgba(5,8,16,.9)}
-  .т::before{content:'';position:absolute;left:0;top:.64em;width:15px;height:2px;
-    background:var(--cyan);box-shadow:0 0 12px rgba(79,227,255,.55)}
-  /* Цель — вывод из первой строки, поэтому янтарём и чуть светлее. */
-  .т.цель{color:#FFFFFF}
-  .т.цель::before{background:var(--amber);box-shadow:0 0 12px rgba(240,174,74,.6)}
 
-  .дальше{position:relative;margin-top:50px;display:inline-flex;align-items:center;gap:13px;
-    text-decoration:none;font-family:var(--mono);font-size:14px;letter-spacing:.18em;
-    text-transform:uppercase;color:#062028;background:var(--cyan);
-    border:1px solid var(--cyan);padding:15px 32px;font-weight:700;
-    box-shadow:0 0 0 0 rgba(79,227,255,.42);
-    transition:background .2s,box-shadow .25s,transform .2s}
-  .дальше:hover{background:#7CEBFF;box-shadow:0 0 34px rgba(79,227,255,.55);
-    transform:translateY(-1px)}
-  .дальше .arw{font-size:17px;line-height:1}
+  /* ── три шага ──────────────────────────────────────────────────────────
+     Колонки, разделённые волосяной линией. Номер и рубрика — служебным
+     моноширинным, заголовок шага — засечками, пояснение — мелким и тусклым.
+     Три уровня веса вместо одного: глаз идёт по номерам, а не читает подряд.
+     ──────────────────────────────────────────────────────────────────── */
+  .шаги{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-top:46px;
+    max-width:1500px}
+  .шаг{position:relative;padding:0 40px}
+  .шаг:first-child{padding-left:0}
+  .шаг:last-child{padding-right:0}
+  /* разделитель ставим слева у второго и третьего — по одному между колонками */
+  .шаг + .шаг::before{content:'';position:absolute;left:0;top:2px;bottom:6px;width:1px;
+    background:linear-gradient(to bottom,
+      rgba(140,170,210,.05), rgba(140,170,210,.3) 30%, rgba(140,170,210,.05))}
+
+  .шаг .но{display:flex;align-items:center;gap:12px}
+  .шаг .но b{font-family:var(--mono);font-size:30px;font-weight:700;line-height:1;
+    color:var(--ц);text-shadow:0 0 22px rgba(0,0,0,.9)}
+  .шаг .но span{font-family:var(--mono);font-size:10.5px;letter-spacing:.26em;
+    text-transform:uppercase;color:var(--ц);opacity:.9;padding-top:3px}
+  .шаг .т{font-family:var(--serif);font-size:25px;font-weight:600;line-height:1.2;
+    margin-top:15px;color:#F2F7FF;text-shadow:0 1px 18px rgba(5,8,16,.95)}
+  .шаг .п{font-size:14.5px;color:#9DB4CE;line-height:1.5;margin-top:10px;max-width:30ch;
+    text-shadow:0 1px 12px rgba(5,8,16,.9)}
+  /* цвет ведёт по шагам: вызов янтарём, путь цианом, цель бирюзой */
+  .шаг.вызов{--ц:var(--amber)}
+  .шаг.путь {--ц:var(--cyan)}
+  .шаг.цель {--ц:var(--teal)}
+
+  /* Колонки ждут своего нажатия. Место под них держится заранее — иначе кадр
+     подпрыгивал бы на каждом шаге, а цепочка внизу ездила вверх-вниз. Поэтому
+     скрываем непрозрачностью, а не display. */
+  .шаг{opacity:0;transform:translateY(14px);
+    transition:opacity .55s cubic-bezier(.22,.61,.36,1),
+               transform .55s cubic-bezier(.22,.61,.36,1)}
+  .шаг.вышел{opacity:1;transform:none}
+
+  /* ── цепочка внизу ─────────────────────────────────────────────────────
+     Своя тёмная полоса во всю ширину: она ложится уже на фотографию, и без
+     подложки слова садились прямо на каркасы качалок.
+     ──────────────────────────────────────────────────────────────────── */
+  .низ{margin-top:auto;padding-bottom:40px}
+  .цепь{display:flex;align-items:center;justify-content:center;gap:22px;flex-wrap:wrap;
+    padding:20px 28px;
+    background:linear-gradient(90deg,
+      rgba(5,8,16,.2), rgba(5,8,16,.82) 18%, rgba(5,8,16,.82) 82%, rgba(5,8,16,.2));
+    border-top:1px solid rgba(140,170,210,.2);
+    border-bottom:1px solid rgba(140,170,210,.2)}
+  .цепь b{font-family:var(--mono);font-size:22px;font-weight:700;letter-spacing:.16em;
+    text-transform:uppercase;color:#F2F7FF;line-height:1.1;white-space:nowrap}
+  .цепь b.а{color:var(--cyan)}
+  .цепь i{font-style:normal;font-size:22px;line-height:1;color:var(--cyan);opacity:.75}
+
+  /* Кнопки нет: экран проходится нажатиями, как и весь остальной показ, и
+     последнее нажатие само уводит на 3D-макет. Вместо кнопки — та же
+     подсказка «дальше», что стоит в подводке. */
+  .подвал{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;
+    margin-top:22px;min-height:34px}
+  .пилот{font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--dim);
+    text-shadow:0 1px 10px rgba(5,8,16,.9)}
+  #дальше{display:flex;align-items:center;gap:11px;
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--dim);
+    text-shadow:0 1px 10px rgba(5,8,16,.9);
+    opacity:0;transition:opacity .4s}
+  #дальше.on{opacity:1}
+  #дальше .a{font-size:17px;line-height:1;color:var(--cyan);
+    animation:кив 1.7s ease-in-out infinite}
+  @keyframes кив{0%,100%{transform:translateX(0);opacity:.55}
+                 50%{transform:translateX(5px);opacity:1}}
 
   /* ── въезд ─────────────────────────────────────────────────────────────
-     Элементы выходят по очереди, снизу вверх: экран включается, а не просто
-     оказывается на проекторе.
-
-     Сделано переходами, а не анимацией с fill-mode: both. У анимации скрытое
-     стартовое состояние держится, пока она не проиграет, — а браузер её
-     приостанавливает, если вкладка не отрисовывается. Проверено: экран
-     открывался с невидимой кнопкой. У перехода конечное состояние задаёт сам
-     класс, и не отработай он вовсе — всё просто окажется на месте сразу.
+     Переходами, а не анимацией с fill-mode: both. Браузер приостанавливает и
+     то и другое, когда кадр не отрисовывается, и у анимации скрытое стартовое
+     состояние держится до конца — экран открывался с невидимой кнопкой.
      ──────────────────────────────────────────────────────────────────── */
-  .штрих,h1,.т,.дальше{opacity:0;transform:translateY(16px);
+  /* Въезд шапки. Колонки и цепочка идут не отсюда, а по нажатиям. */
+  .штрих,h1,.пилот{opacity:0;transform:translateY(16px);
     transition:opacity .8s cubic-bezier(.22,.61,.36,1),
                transform .8s cubic-bezier(.22,.61,.36,1)}
   .штрих{transform:none;width:0;transition:opacity .6s,width .7s cubic-bezier(.22,.61,.36,1)}
-  body.вошло .штрих{opacity:1;width:64px}
-  body.вошло h1{opacity:1;transform:none;transition-delay:.12s}
-  body.вошло .т:nth-of-type(1){opacity:1;transform:none;transition-delay:.34s}
-  body.вошло .т:nth-of-type(2){opacity:1;transform:none;transition-delay:.48s}
-  body.вошло .т:nth-of-type(3){opacity:1;transform:none;transition-delay:.62s}
-  body.вошло .дальше{opacity:1;transform:none;transition-delay:.82s}
+  body.вошло .штрих{opacity:1;width:58px}
+  body.вошло h1{opacity:1;transform:none;transition-delay:.10s}
+  body.вошло .пилот{opacity:1;transform:none;transition-delay:.26s}
+
+  /* Цепочка — итог, поэтому выходит последним шагом, а не вместе с шапкой */
+  .цепь{opacity:0;transform:translateY(14px);
+    transition:opacity .6s cubic-bezier(.22,.61,.36,1),
+               transform .6s cubic-bezier(.22,.61,.36,1)}
+  .цепь.вышла{opacity:1;transform:none}
+
   @media (prefers-reduced-motion:reduce){
-    .штрих,h1,.т,.дальше{transition:none}
+    .штрих,h1,.пилот,.шаг,.цепь{transition:none}
   }
 
-  @media (max-width:1100px){
-    h1{font-size:33px}
-    .т{font-size:19px;padding-left:26px}
-    .тезисы{margin-top:32px;gap:16px}
-    .дальше{margin-top:36px}
-    .визир{inset:18px}
+  /* ── узкий и низкий экран ──────────────────────────────────────────── */
+  @media (max-width:1500px){
+    .лист{padding:44px 52px 0}
+    h1{font-size:34px}
+    .тезис{font-size:18px}
+    .шаг{padding:0 28px}
+    .шаг .т{font-size:21px}
+    .шаг .п{font-size:13.5px}
+    .цепь b,.цепь i{font-size:17px}
+  }
+  @media (max-height:800px){
+    .лист{padding-top:32px}
+    h1{font-size:30px;margin-top:16px}
+    .шаги{margin-top:30px}
+    .низ{padding-bottom:24px}
+    .цепь{padding:14px 22px}
+    .подвал{margin-top:16px}
+    .дальше{padding:12px 26px}
   }
 
   /* ── водяной знак ──────────────────────────────────────────────────── */
@@ -166,51 +209,106 @@
 <div id="знак" aria-hidden="true"><img src="лого.svg" alt=""></div>
 
 <div class="лист">
-  <div class="штрих"></div>
 
+  <div class="штрих"></div>
   <h1>Цифровой двойник на базе ИС «<b>ABAI</b>»</h1>
 
-  <!-- Три тезиса по трём абзацам вступительной речи: проблема, что уже делаем,
-       цель. Средний собран из второго и третьего абзацев — формулировка моя,
-       правьте под себя, крайние два даны дословно. -->
-  <div class="тезисы">
-    <div class="т">Сложные запасы требуют качественно новых решений</div>
-    <div class="т">Несколько лет цифровизации — начали с процессов UPSTREAM</div>
-    <div class="т цель">Цель 2025–2028 — стать полностью цифровой компанией
-      и принимать решения заранее</div>
+  <div class="шаги">
+    <div class="шаг вызов">
+      <div class="но"><b>01</b><span>Вызов</span></div>
+      <div class="т">Сложность запасов растёт</div>
+      <div class="п">Традиционные методы повышения эффективности уже недостаточны.</div>
+    </div>
+    <div class="шаг цель">
+      <div class="но"><b>02</b><span>Цель 2025–2028</span></div>
+      <div class="т">Принимать решения заранее</div>
+      <div class="п">Объединить данные, модели и экспертизу в единой цифровой среде.</div>
+    </div>
+    <div class="шаг путь">
+      <div class="но"><b>03</b><span>Путь</span></div>
+      <div class="т">Цифровизация UPSTREAM</div>
+      <div class="п">КМГ последовательно переводит ключевые процессы в цифровой контур.</div>
+    </div>
   </div>
 
-  <a class="дальше" href="первый_слайд_v3.html">Demo ч.1<span class="arw">→</span></a>
+  <div class="низ">
+    <div class="цепь">
+      <b class="а">ABAI</b><i>→</i><b>Цифровой двойник</b><i>→</i><b>Предиктивные решения</b>
+    </div>
+    <div class="подвал">
+      <div class="пилот">Пилот — Молдабек Восточный · АО «Эмбамунайгаз»</div>
+      <div id="дальше"><span>дальше</span><span class="a">→</span></div>
+    </div>
+  </div>
+
 </div>
 
 <script>
-/* Въезд запускаем следующим кадром: класс на body переводит всё в конечное
-   состояние по переходам. Если переходы не отработают — состояние применится
-   мгновенно, и экран всё равно будет полным. */
+/* Въезд шапки запускаем следующим кадром: класс на body переводит её в конечное
+   состояние по переходам. */
 requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.add('вошло')));
-/* Страховка от подвисшего кадрового цикла: в фоне rAF не вызывается вовсе, и
-   без неё показ мог открыться пустым кадром. */
 setTimeout(() => document.body.classList.add('вошло'), 400);
 
-/* Вторая страховка, и она обязательна. Красивый въезд — украшение, а пустой
-   экран на показе — авария. Браузер приостанавливает и переходы тоже, если
-   кадр не отрисовывается: на проверке класс уже стоял, а непрозрачность
-   держалась на нуле. Поэтому, когда въезд по всем срокам обязан закончиться,
-   конечное состояние проставляется напрямую в стиль элемента — дальше оно ни
-   от чего не зависит. Переходы к этому моменту отыграли, скачка не видно. */
+/* Страховка, и она обязательна: красивый въезд — украшение, пустой экран на
+   показе — авария. Приостановленный переход держит нарисованное значение на
+   старте, сколько бы мы ни правили стиль, поэтому сначала снимаем сам переход,
+   и только потом проставляем конечное состояние. Шаги сюда не входят: их
+   скрытость осмысленная, а не побочная. */
 setTimeout(() => {
-  for (const э of document.querySelectorAll('h1, .т, .дальше, .штрих')){
-    /* Переход снимаем первым делом. Без этого приостановленный переход
-       продолжает держать нарисованное значение на старте, сколько бы мы ни
-       правили стиль: проверено — style стоял «opacity: 1», а на экране был
-       ноль. Снятый переход заставляет значение примениться сразу. */
+  for (const э of document.querySelectorAll('.штрих, h1, .пилот')){
     э.style.transition = 'none';
     э.style.opacity = '1';
     э.style.transform = 'none';
   }
   const ш = document.querySelector('.штрих');
-  if (ш) ш.style.width = '64px';
+  if (ш) ш.style.width = '58px';
 }, 1600);
+
+/* ── проход по нажатиям ────────────────────────────────────────────────
+   Экран идёт теми же нажатиями, что и весь показ: три колонки по очереди,
+   затем цепочка-итог, и последнее нажатие само уводит на 3D-макет. Кнопки нет
+   намеренно — докладчик жмёт в одном ритме от начала показа до конца и не
+   ищет мышью цель на экране.
+   ──────────────────────────────────────────────────────────────────── */
+const шаги = [...document.querySelectorAll('.шаг')];
+const цепь = document.querySelector('.цепь');
+const подсказка = document.getElementById('дальше');
+const ВСЕГО = шаги.length + 1;          // колонки + цепочка
+let шаг = 0;
+let ушли = false;                        // переход к макету уже запущен
+
+function показать(){
+  шаги.forEach((э, i) => э.classList.toggle('вышел', i < шаг));
+  цепь.classList.toggle('вышла', шаг >= ВСЕГО);
+  подсказка.classList.add('on');
+}
+
+function вперёд(){
+  if (ушли) return;
+  if (шаг < ВСЕГО){ шаг++; показать(); return; }
+  /* Всё сказано — уходим на макет. Флаг обязателен: на показе по кнопке бьют
+     дважды, а второй переход по тому же адресу сбрасывает уже начавшуюся
+     загрузку моделей и слайд открывается заметно дольше. */
+  ушли = true;
+  подсказка.classList.remove('on');
+  location.href = 'первый_слайд_v3.html';
+}
+
+function назад(){
+  if (ушли || шаг === 0) return;
+  шаг--; показать();
+}
+
+addEventListener('click', вперёд);
+addEventListener('keydown', e => {
+  const c = e.code;
+  if (c === 'ArrowRight' || c === 'Enter' || c === 'NumpadEnter' ||
+      c === 'Space' || c === 'PageDown'){ e.preventDefault(); вперёд(); }
+  if (c === 'ArrowLeft' || c === 'Backspace' || c === 'PageUp'){ e.preventDefault(); назад(); }
+});
+
+// подсказка появляется, когда шапка доехала, а не сразу
+setTimeout(() => подсказка.classList.add('on'), 900);
 </script>
 
 </body>
