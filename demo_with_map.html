@@ -115,7 +115,7 @@
      финале, когда говорить о цифрах уже уместно.
      ──────────────────────────────────────────────────────────────────── */
   #effects{position:fixed;right:34px;top:5.5%;width:38%;max-height:89%;z-index:6;
-    padding:22px 26px 20px;overflow:hidden;
+    padding:22px 26px 20px;overflow:hidden auto;   /* на 720p панель выше кадра — лучше прокрутить */
     background:linear-gradient(180deg,rgba(6,11,20,.96),rgba(4,8,15,.985));
     border:1px solid rgba(140,170,210,.16);
     opacity:0;transform:translateX(40px);
@@ -136,6 +136,38 @@
     line-height:1;flex:0 0 auto}
   #effects .fx .l{font-size:14px;color:#9DB4CE;line-height:1.3}
 
+  /* ── сведение контуров в общую цифру ────────────────────────────────
+     Рельс слева от списка собирает три контура в один поток и заканчивается
+     стрелкой, которая уводит его в итоговую цифру. Без этого панель читалась
+     как три несвязанных процента, и в зале оставался висеть вопрос «а сколько
+     это вместе».
+     ──────────────────────────────────────────────────────────────────── */
+  #effects .body{position:relative;padding-left:19px}
+  #effects .body::before{content:'';position:absolute;left:4px;top:10px;bottom:9px;width:2px;
+    background:linear-gradient(180deg,rgba(240,174,74,.2),rgba(53,208,194,.85))}
+  /* стрелка на конце рельса — острие смотрит в блок со сводом */
+  #effects .body::after{content:'';position:absolute;left:0;bottom:-1px;
+    border-left:5px solid transparent;border-right:5px solid transparent;
+    border-top:8px solid rgba(53,208,194,.85)}
+  #effects .ct{position:relative}
+  /* отвод от каждого контура к рельсу: видно, что в поток идёт именно он */
+  #effects .ct::before{content:'';position:absolute;left:-14px;top:15px;width:12px;height:2px;
+    background:rgba(240,174,74,.55)}
+
+  #effects .свод{margin-top:15px;border:1px solid rgba(53,208,194,.42);
+    border-left:2px solid var(--teal);padding:13px 15px 14px;
+    background:rgba(53,208,194,.055);
+    opacity:0;transform:translateY(10px);
+    transition:opacity .45s ease-out,transform .45s ease-out}
+  #effects.on .свод{opacity:1;transform:none;transition-delay:.42s}
+  #effects .свод:empty{display:none}
+  #effects .свод .п{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--teal);line-height:1.45}
+  #effects .свод .ц{display:flex;align-items:baseline;gap:10px;margin-top:9px}
+  #effects .свод .ц .v{font-family:var(--mono);font-size:25px;color:#F2F7FF;
+    line-height:1.05;flex:0 0 auto;font-weight:700}
+  #effects .свод .ц .l{font-size:13.5px;color:#9DB4CE;line-height:1.3}
+
   /* Дорожная карта отделена: это уже не эффект, а сроки */
   #effects .road{margin-top:16px;padding-top:16px;
     border-top:1px solid rgba(140,170,210,.16)}
@@ -155,8 +187,10 @@
      Стоит в том же правом слоте, что и панель эффектов, и в той же вёрстке:
      на следующем нажатии одна сменяет другую на месте, без переезда кадра.
      ──────────────────────────────────────────────────────────────────── */
+  /* Прокрутка на случай узкого экрана: на 1080p справка влезает целиком, на
+     ноутбучных 720p — нет, и лучше прокрутить, чем потерять нижние строки. */
   #справка{position:fixed;right:34px;top:5.5%;width:38%;max-height:89%;z-index:6;
-    padding:22px 26px 20px;overflow:hidden;
+    padding:22px 26px 20px;overflow:hidden auto;
     background:linear-gradient(180deg,rgba(6,11,20,.96),rgba(4,8,15,.985));
     border:1px solid rgba(140,170,210,.16);
     opacity:0;transform:translateX(40px);
@@ -170,15 +204,21 @@
   #справка .sub{font-size:14px;color:#9DB4CE;margin-top:8px;line-height:1.35}
   #справка .rows{margin-top:18px;padding-top:16px;
     border-top:1px solid rgba(140,170,210,.16)}
-  #справка .rw{display:flex;gap:14px;padding:9px 0;
+  /* Строк стало вдвое больше — ярус фактов и ярус «что уже сделано». Плотность
+     поднята, иначе панель не влезает в кадр даже на 1080p. */
+  #справка .rw{display:flex;gap:12px;padding:6px 0;
     border-bottom:1px solid rgba(140,170,210,.09);
     opacity:0;transform:translateY(10px);
     transition:opacity .4s ease-out,transform .4s ease-out}
   #справка.on .rw{opacity:1;transform:none}
   #справка .rw:last-child{border-bottom:0}
-  #справка .rw .k{font-family:var(--mono);font-size:12px;letter-spacing:.1em;
-    text-transform:uppercase;color:#7C8DA6;flex:0 0 38%;line-height:1.35}
-  #справка .rw .v{font-size:14px;color:#DCE7F5;line-height:1.35}
+  #справка .rw .k{font-family:var(--mono);font-size:11px;letter-spacing:.08em;
+    text-transform:uppercase;color:#7C8DA6;flex:0 0 40%;line-height:1.35}
+  #справка .rw .v{font-size:13px;color:#DCE7F5;line-height:1.35}
+  /* заголовок яруса: отбивает факты месторождения от того, что уже сделано */
+  #справка .rw.гр{display:block;border-bottom:0;padding:13px 0 4px;
+    font-family:var(--mono);font-size:10px;letter-spacing:.24em;
+    text-transform:uppercase;color:var(--cyan)}
   /* источник цифр — мелко, но на экране: в этом зале спросят, откуда данные */
   #справка .src{margin-top:14px;font-family:var(--mono);font-size:10.5px;
     letter-spacing:.08em;color:#5E7089}
@@ -205,6 +245,84 @@
     text-transform:uppercase;color:#EAF2FF;white-space:nowrap;
     background:rgba(8,14,26,.82);border-left:2px solid var(--cyan);
     padding:6px 10px;backdrop-filter:blur(6px)}
+
+  /* ── Атырау: ЦИО ──────────────────────────────────────────────────────
+     Своя точка на карте, отдельно от промысла. Собрана колонкой: метка
+     города, под ней карточка центра. Точка сидит ровно на координате, а всё
+     остальное свисает вниз-вправо — там свободное поле кадра.
+
+     Цвет янтарный, как у самой области: голубой в этом кадре занят промыслом,
+     и две одинаковые точки читались бы как два месторождения.
+     ──────────────────────────────────────────────────────────────────── */
+  /* Растёт вверх от точки: карточка, метка, кольцо. Сдвиг по вертикали на всю
+     высоту минус радиус кольца — так кольцо садится ровно на координату, а
+     содержимое уходит в свободное поле над ней. Вниз оно уезжало за край кадра
+     и попадало прямо под панель ИТ-ландшафта. */
+  #cio{position:fixed;z-index:6;display:flex;flex-direction:column;
+    align-items:flex-start;gap:9px;
+    opacity:0;pointer-events:none;transform:translate(-13px,calc(-100% + 13px));
+    transition:opacity .5s, top .75s cubic-bezier(.22,.61,.36,1)}
+  #cio.on{opacity:1}
+  /* панель ИТ-ландшафта накрыла точку — Атырау уходит целиком */
+  #cio.накрыт{opacity:0}
+  #cio .dot{width:26px;height:26px;border:2px solid var(--amber);border-radius:50%;
+    box-shadow:0 0 14px rgba(240,174,74,.7), inset 0 0 9px rgba(240,174,74,.3);
+    flex:0 0 auto;animation:пульс 2.4s ease-in-out infinite}
+  #cio .tx{font-family:var(--mono);font-size:12px;letter-spacing:.12em;
+    text-transform:uppercase;color:#FFF3E0;white-space:nowrap;
+    background:rgba(8,14,26,.86);border-left:2px solid var(--amber);
+    padding:6px 10px;backdrop-filter:blur(6px);margin-left:2px}
+
+  /* Карточка центра. Ширина фиксирована — длинные строки про КМГИ иначе
+     растягивают её на полкадра и накрывают контур области. */
+  #cio .карта{width:340px;max-width:34vw;margin-left:2px;
+    background:rgba(8,14,26,.88);border:1px solid rgba(140,170,210,.18);
+    border-left:2px solid var(--amber);padding:11px 13px 12px;
+    backdrop-filter:blur(6px);
+    opacity:0;transform:translateY(8px);
+    transition:opacity .45s .25s,transform .45s .25s}
+  #cio.on .карта{opacity:1;transform:none}
+  #cio .карта:empty{display:none}
+  #cio .карта .ш{font-family:var(--mono);font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--amber);line-height:1.35}
+  /* Цепь «пласт — труба — скважина» звеньями, а не строкой: так видно, что это
+     последовательность объектов, а не перечисление через запятую. */
+  #cio .карта .цепь{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:9px}
+  #cio .карта .цепь span{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;
+    text-transform:uppercase;color:#EAF2FF;border:1px solid rgba(240,174,74,.45);
+    padding:3px 8px}
+  #cio .карта .цепь i{color:#5E7089;font-style:normal;font-size:11px}
+  #cio .карта .стр{font-size:12px;color:#9DB4CE;line-height:1.42;margin-top:6px;
+    padding-left:11px;position:relative}
+  #cio .карта .стр::before{content:'';position:absolute;left:0;top:7px;
+    width:4px;height:4px;background:rgba(140,170,210,.5)}
+  #cio .карта .стр:first-of-type{margin-top:11px;padding-top:10px;
+    border-top:1px solid rgba(140,170,210,.14)}
+  #cio .карта .стр:first-of-type::before{top:17px}
+
+  /* ── КМГИ ─────────────────────────────────────────────────────────────
+     Отдельный блок и отдельный цвет. Это не точка на карте, а операционная
+     модель института: внутри карточки ЦИО смысл слипался с центром в одно
+     сообщение, а фиолетовый в этой палитре не занят ни промыслом, ни областью.
+     Стоит слева — там свободное поле кадра и не спорит ни с Атырау, ни с
+     выноской промысла справа.
+     ──────────────────────────────────────────────────────────────────── */
+  #kmgi{position:fixed;left:34px;top:19%;width:334px;max-width:30vw;z-index:6;
+    background:rgba(8,14,26,.88);border:1px solid rgba(155,123,232,.28);
+    border-left:2px solid var(--viol);padding:13px 15px 14px;
+    backdrop-filter:blur(6px);pointer-events:none;
+    opacity:0;transform:translateX(-16px);
+    transition:opacity .5s,transform .55s cubic-bezier(.22,.61,.36,1)}
+  #kmgi.on{opacity:1;transform:none}
+  #kmgi .ш{font-family:var(--mono);font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--viol);line-height:1.4}
+  #kmgi .стрк{margin-top:11px;padding-top:10px;
+    border-top:1px solid rgba(155,123,232,.2)}
+  #kmgi .стрк div{position:relative;padding-left:12px;font-size:12.5px;
+    color:#9DB4CE;line-height:1.45;margin-top:7px}
+  #kmgi .стрк div:first-child{margin-top:0}
+  #kmgi .стрк div::before{content:'';position:absolute;left:0;top:7px;
+    width:4px;height:4px;background:rgba(155,123,232,.65)}
 
   /* ── приглашение к следующему такту ──────────────────────────────────── */
   #go-next{position:fixed;right:44px;bottom:74px;z-index:6;display:flex;
@@ -316,7 +434,11 @@
   <div class="land"><div class="hd2"></div><div class="row2"></div></div>
 </div>
 <div id="mark"><span class="dot"></span><span class="ln"></span><span class="tx"></span></div>
-<div id="effects"><div class="hd"></div><div class="body"></div><div class="road"></div></div>
+<!-- порядок узлов обратный: карточка, метка, точка. Точка стоит на координате,
+     всё остальное растёт от неё вверх -->
+<div id="cio"><div class="карта"></div><span class="tx"></span><span class="dot"></span></div>
+<div id="kmgi"><div class="ш"></div><div class="стрк"></div></div>
+<div id="effects"><div class="hd"></div><div class="body"></div><div class="свод"></div><div class="road"></div></div>
 <div id="справка"><div class="hd"></div><div class="nm"></div><div class="sub"></div><div class="rows"></div><div class="src"></div></div>
 <div id="go-next"><span>дальше</span><span class="a">→</span></div>
 <div id="bar"></div>
@@ -387,9 +509,44 @@ const TAKES = [
     /* Выноска на месторождение: доли кадра замерены по самой ленте — пятно
        выходит на место к 10,9 с и дальше стоит неподвижно до конца такта. */
     метка:{ с:10.9, x:0.721, y:0.460, текст:'Восточный Молдабек' },
+
+    /* Такт проходится не одним нажатием, а четырьмя: Атырау с ЦИО → блок КМГИ →
+       панель ИТ-ландшафта → дальше. Речь идёт этими же шагами, и вываливать всё
+       разом означало отдать зрителю три мысли одновременно. */
+    шаги:['цио','кмги','цепочка'],
+
+    /* Атырау. ЦИО стоит там, а не на промысле: центр развёрнут в Атырау, на
+       базе ЭМГ, и ведёт цепочку моделей удалённо. Первая версия вешала карточку
+       на выноску Восточного Молдабека — выходило, будто центр стоит в поле.
+
+       Доли кадра сняты по ленте: устье Урала у каспийского берега. Карточка
+       раскрывается ВВЕРХ от точки — вниз она уходила за нижний край и лезла
+       под панель ИТ-ландшафта. */
+    /* Доли пересчитаны по опорной точке кадра: выноска промысла стоит на
+       0.721 × 0.460 и на скриншоте попадает в 0.703 × 0.471, отсюда поправка
+       снимка к кадру. Русло Урала у берега приходится на 0.55 × 0.66 — туда и
+       ставим. Прежние 0.523 × 0.648 сидели выше устья и мимо реки. */
+    цио:{ x:0.550, y:0.660,
+      текст:'Атырау · ЦИО',
+      шапка:'Центр интегрированных операций развёрнут',
+      цепь:['пласт','труба','скважина'],
+      строки:[
+        'Работа с цепочкой моделей объектов реального мира',
+      ] },
+
+    /* КМГИ — отдельным блоком и своим цветом. Это не про место на карте, а про
+       операционную модель института, и внутри карточки ЦИО этот смысл слипался
+       с центром в одно сообщение. Стоит слева, свободным полем кадра. */
+    кмги:{
+      шапка:'Изменения в операционной модели КМГИ',
+      строки:[
+        'Инженерный персонал перераспределяется между институтом и ДЗО',
+        'Орг. структура предприятий станет легче и управляемее',
+        'Единые методики принятия инженерных решений',
+      ] },
     цепочка:{
       с:9.9,                        // выходит под конец такта, когда область уже развёрнута
-      шапка:'Цепочка создания ценности UPSTREAM',
+      шапка:'Цель 2026 — 100% цифровизация Восточного Молдабека по всей цепочке',
       звенья:[
         ['01','Геология и геологоразведка','коммерчески извлекаемые запасы','t-Navigator, Petrel'],
         ['02','Разработка месторождений','стратегия разработки','ABAI ЦРНС 2.0'],
@@ -446,6 +603,16 @@ const TAKES = [
                         [['−5%','управляемые потери добычи'],
                          ['−3%','CAPEX/OPEX инфраструктуры']]],
       ],
+      /* Проценты по контурам сами по себе не отвечают на главный вопрос зала —
+         сколько это вместе. Сводим их в одну цифру: рельс слева собирает три
+         контура в поток, стрелка уводит его сюда. Формулировка из сценария. */
+      свод:{
+        подпись:'Ожидаемый эффект от внедрения ЦД на Молдабек В.',
+        цифры:[
+          ['2,8 млн тонн',      'по добыче'],
+          ['более 400 млрд ₸',  ''],
+        ],
+      },
       итоги:[
         // Про тиражирование панель больше не говорит: сроки по ТОП-12 и охвату
         // ушли на этап тиражирования, где под них есть карта.
@@ -480,9 +647,21 @@ const СПРАВКА = {
     ['Фонд добывающих',         '360 скважин действующих'],
     ['Фонд нагнетательных',     '61 скважина действующая'],
     ['Добыча с начала года',    '310,3 тыс. тонн'],
-    ['Пром. эксплуатация ЦД',   'октябрь 2026'],
+
+    /* Второй ярус — под вводное слово ГД ЭМГ. Он говорит про 2016 год, про ЦИО
+       и постоянно действующую модель, про тысячи сценариев, про 161 тыс. тонн и
+       про замену наклонно-направленных скважин горизонтальными — а на экране
+       до этого стояли одни только запасы и фонд, и половина речи шла в пустоту.
+       Формулировки из сценария. */
+    ['—', 'Что уже сделано'],
+    ['Интеллектуальное м/р',   'с 2016 года — инфраструктурная база пилота'],
+    ['ЦИО',                    'ГГДМ переведена из статичной в постоянно действующую'],
+    ['Расчёт сценариев',       'тысячи вариантов за минуты вместо месяцев'],
+    ['Выявленный потенциал',   'дополнительно 161 тыс. тонн добычи'],
+    ['Оптимизация бурения',    '3 наклонно-направленные → 1 горизонтальная'],
+    ['Пром. эксплуатация ЦД',  'октябрь 2026'],
   ],
-  сноска:'по состоянию на 01.01.2026 · НГДУ «Кайнармунайгаз»',
+  сноска:'запасы и фонд — на 01.01.2026, НГДУ «Кайнармунайгаз»',
 };
 
 const SLIDE = 'первый_слайд_v3.html';
@@ -492,7 +671,7 @@ const EPS = 0.03;                       // допуск сравнения вр�
 const $ = s => document.querySelector(s);
 const film = $('#film'), cap = $('#cap'), bar = $('#bar'),
       slide = $('#slide'), nudge = $('#go-next'), chain = $('#chain'), mark = $('#mark'), effects = $('#effects'),
-      globe = $('#globe'), справка = $('#справка');
+      globe = $('#globe'), справка = $('#справка'), cio = $('#cio'), kmgi = $('#kmgi');
 
 function собратьСправку(с){
   справка.querySelector('.hd').textContent  = с.шапка;
@@ -501,8 +680,16 @@ function собратьСправку(с){
   const строки = справка.querySelector('.rows');
   строки.textContent = '';
   с.строки.forEach(([к, в], i) => {
-    const r = document.createElement('div'); r.className = 'rw';
-    r.style.transitionDelay = (0.12 + i*0.07) + 's';   // строки проявляются по очереди
+    const r = document.createElement('div');
+    r.style.transitionDelay = (0.10 + i*0.045) + 's';   // строки проявляются по очереди
+    // «—» вместо ключа — это не строка, а заголовок яруса внутри справки
+    if (к === '—'){
+      r.className = 'rw гр';
+      r.textContent = в;
+      строки.appendChild(r);
+      return;
+    }
+    r.className = 'rw';
     const кк = document.createElement('div'); кк.className = 'k'; кк.textContent = к;
     const вв = document.createElement('div'); вв.className = 'v'; вв.textContent = в;
     r.append(кк, вв);
@@ -607,6 +794,26 @@ function собратьЭффекты(э){
     тело.appendChild(к);
   });
 
+  // свод: общая цифра, в которую сходятся эффекты всех трёх контуров
+  const свод = effects.querySelector('.свод');
+  свод.textContent = '';
+  if (э.свод){
+    const п = document.createElement('div'); п.className = 'п';
+    п.textContent = э.свод.подпись;
+    свод.appendChild(п);
+    for (const [знач, подпись] of э.свод.цифры){
+      const ц = document.createElement('div'); ц.className = 'ц';
+      const v = document.createElement('span'); v.className = 'v'; v.textContent = знач;
+      ц.appendChild(v);
+      // подпись не у каждой цифры: «более 400 млрд ₸» в сценарии идёт без пояснения
+      if (подпись){
+        const l = document.createElement('span'); l.className = 'l'; l.textContent = подпись;
+        ц.appendChild(l);
+      }
+      свод.appendChild(ц);
+    }
+  }
+
   const дорога = effects.querySelector('.road');
   дорога.textContent = '';
   э.итоги.forEach(([знач, подпись], i) => {
@@ -676,7 +883,9 @@ function следующаяСмена(t, время){
    прямо в проценты экрана: на не-16:9 часть кадра обрезана, и подпись уедет
    от объекта. Считаем фактический прямоугольник ленты и ставим точку в нём.
    ──────────────────────────────────────────────────────────────────── */
-function поставитьМетку(м){
+/* Ставит любую выноску по долям кадра: и промысел, и точку ЦИО. Раньше функция
+   знала только про #mark — с появлением второй точки узел передаётся явно. */
+function поставитьМетку(узел, м){
   const вш = innerWidth, вв = innerHeight;
   const кадр = (film.videoWidth || 1920) / (film.videoHeight || 1080);
   let ш, в;
@@ -685,20 +894,108 @@ function поставитьМетку(м){
   // лента может быть поднята под панель — выноска обязана ехать вместе с ней,
   // иначе оторвётся от объекта. Сдвиг задан в процентах от высоты элемента.
   const подъём = film.classList.contains('up') ? вв * 0.10 : 0;
-  mark.style.left = ((вш - ш) / 2 + м.x * ш) + 'px';
-  mark.style.top  = ((вв - в) / 2 + м.y * в - подъём) + 'px';
+  узел.style.left = ((вш - ш) / 2 + м.x * ш) + 'px';
+  узел.style.top  = ((вв - в) / 2 + м.y * в - подъём) + 'px';
+
+  /* Карточку подрезаем по правому краю окна. Точка привязана к кадру, и на
+     узком экране карточка в 340 px от неё уезжала за границу. Точку не
+     двигаем: она обязана стоять на своём объекте, а сузиться карточке не жалко. */
+  const карта = узел.querySelector('.карта');
+  if (карта && карта.firstChild){
+    const слева = карта.getBoundingClientRect().left;
+    карта.style.maxWidth = Math.max(210, вш - слева - 22) + 'px';
+  }
+}
+
+function собратьКарту(к){
+  const узел = cio.querySelector('.карта');
+  if (!к){ узел.textContent = ''; узел.dataset.готово = ''; return; }
+  if (узел.dataset.готово === к.шапка) return;
+  узел.dataset.готово = к.шапка;
+  узел.textContent = '';
+
+  const ш = document.createElement('div'); ш.className = 'ш'; ш.textContent = к.шапка;
+  узел.appendChild(ш);
+
+  if (к.цепь){
+    const ц = document.createElement('div'); ц.className = 'цепь';
+    к.цепь.forEach((звено, i) => {
+      if (i){ const т = document.createElement('i'); т.textContent = '→'; ц.appendChild(т); }
+      const s = document.createElement('span'); s.textContent = звено; ц.appendChild(s);
+    });
+    узел.appendChild(ц);
+  }
+  for (const с of (к.строки || [])){
+    const д = document.createElement('div'); д.className = 'стр'; д.textContent = с;
+    узел.appendChild(д);
+  }
 }
 
 function обновитьМетку(t, время){
-  if (!t.метка){ mark.classList.remove('on'); return; }
-  mark.querySelector('.tx').textContent = t.метка.текст;
-  поставитьМетку(t.метка);
-  mark.classList.toggle('on', время >= t.метка.с - EPS);
+  // выноска промысла — выходит по времени внутри такта
+  if (!t.метка) mark.classList.remove('on');
+  else {
+    mark.querySelector('.tx').textContent = t.метка.текст;
+    поставитьМетку(mark, t.метка);
+    mark.classList.toggle('on', время >= t.метка.с - EPS);
+  }
+}
+
+/* ── подшаги такта ────────────────────────────────────────────────────
+   Атырау с ЦИО, блок КМГИ и панель ИТ-ландшафта выходят отдельными
+   нажатиями — между приближением к области и уходом на следующий такт. Речь
+   идёт этими же шагами, и вываливать всё разом значит отдать зрителю три
+   мысли одновременно.
+
+   Состояние — одно число: сколько подшагов пройдено. Отсюда и шаг назад: он
+   просто уменьшает счётчик, а вид пересобирается целиком, без обратных
+   действий на каждый случай.
+   ──────────────────────────────────────────────────────────────────── */
+let шаг = 0;
+
+function применитьШаги(t){
+  const шаги = (t && t.шаги) || [];
+  const дошли = имя => шаги.indexOf(имя) >= 0 && шаг > шаги.indexOf(имя);
+
+  // Атырау · ЦИО
+  if (!t || !t.цио){ cio.classList.remove('on'); собратьКарту(null); }
+  else {
+    cio.querySelector('.tx').textContent = t.цио.текст;
+    собратьКарту(t.цио);
+    поставитьМетку(cio, t.цио);
+    cio.classList.toggle('on', дошли('цио'));
+  }
+
+  // КМГИ
+  if (!t || !t.кмги) kmgi.classList.remove('on');
+  else {
+    собратьКМГИ(t.кмги);
+    kmgi.classList.toggle('on', дошли('кмги'));
+  }
+
+  // панель ИТ-ландшафта
+  цепочкуНаЭкран(t, дошли('цепочка'));
+}
+
+function собратьКМГИ(к){
+  if (kmgi.dataset.готово === к.шапка) return;
+  kmgi.dataset.готово = к.шапка;
+  kmgi.querySelector('.ш').textContent = к.шапка;
+  const стрк = kmgi.querySelector('.стрк');
+  стрк.textContent = '';
+  for (const с of к.строки){
+    const д = document.createElement('div'); д.textContent = с;
+    стрк.appendChild(д);
+  }
 }
 
 addEventListener('resize', () => {
   const t = TAKES[take];
-  if (t && t.метка && mark.classList.contains('on')) поставитьМетку(t.метка);
+  if (t && t.метка && mark.classList.contains('on')) поставитьМетку(mark, t.метка);
+  if (t && t.цио  && cio.classList.contains('on')){
+    поставитьМетку(cio, t.цио);
+    проверитьНакрытие(цепочкаПоднята());   // от размера окна зависит, накрыт ли Атырау
+  }
 });
 
 /* ── панель цепочки ───────────────────────────────────────────────────
@@ -768,9 +1065,31 @@ function цепочкуНаЭкран(t, показать){
   собратьЦепочку(t.цепочка);
   chain.classList.toggle('on', показать);
   film.classList.toggle('up', показать);      // кадр идёт вместе с панелью
-  if (t.метка) поставитьМетку(t.метка);       // выноска обязана ехать за кадром
+  /* Карточка ЦИО уходит вместе с подъёмом панели. По речи это уже следующий
+     такт — про центр и КМГИ сказано, дальше идёт цель 2026 по всей цепочке.
+     Заодно снимается наложение: на 1280×720 панель занимает 487 px, и карточка
+     оказывалась под ней. Сама выноска с названием промысла остаётся. */
+  // выноски обязаны ехать за кадром, иначе оторвутся от своих объектов
+  if (t.метка) поставитьМетку(mark, t.метка);
+  if (t.цио)   поставитьМетку(cio, t.цио);
   // панель занимает низ экрана — подсказку «дальше» уводим над ней
   nudge.style.bottom = показать ? (chain.offsetHeight + 20) + 'px' : '';
+  проверитьНакрытие(показать);
+}
+
+/* Атырау скрываем не по факту подъёма панели, а по факту накрытия. На 1080p
+   панель ИТ-ландшафта занимает низ кадра и до точки не доходит, а на ноутбучных
+   720p занимает почти половину и накрывает её целиком. Правило одно: если
+   пересеклись — Атырау уходит, если нет — остаётся на экране вместе с панелью. */
+function проверитьНакрытие(панельПоднята){
+  if (!панельПоднята || !cio.classList.contains('on')){
+    cio.classList.remove('накрыт');
+    return;
+  }
+  // панель едет вверх переходом; её посадочный верх считаем по вёрстке
+  const верхПанели = innerHeight - chain.offsetHeight;
+  const к = cio.getBoundingClientRect();
+  cio.classList.toggle('накрыт', к.bottom > верхПанели);
 }
 
 const цепочкаПоднята = () => chain.classList.contains('on');
@@ -859,7 +1178,8 @@ function playTake(idx, { seek = false, сместа = false } = {}){
   // на последнем такте поднимаем этап тиражирования: у него двадцать секунд
   // разбега, и к финалу планета уже собрана
   if (idx === TAKES.length - 1) поднятьГлобус();
-  цепочкуНаЭкран(t, false);       // новый такт всегда начинается без панели
+  // новый такт всегда начинается с нуля подшагов: без Атырау, КМГИ и панели
+  шаг = 0; применитьШаги(t);
   film.playbackRate = скоростьТакта(t, film.currentTime);
   // Если данных ещё не хватило, браузер отклоняет play(). Молча проглотить
   // нельзя: показ тогда просто не тронется с места. Ждём готовности и пробуем
@@ -905,17 +1225,17 @@ function forward(){
     return;
   }
 
-  /* Такт с панелью проходится в два нажатия. Первое — область стоит чистой,
-     панель поднимается снизу и приподнимает кадр. Второе — панель с кадром
-     возвращаются, и только по завершении этого движения идёт следующий такт:
-     если тронуть ленту сразу, сдвиг наложится на воспроизведение и картинка
-     дёрнется. Пока идёт возврат, лента стоит на паузе. */
+  /* Такт с подшагами проходится нажатиями: Атырау с ЦИО, блок КМГИ, панель
+     ИТ-ландшафта — и только после последнего идёт следующий такт. Возврат
+     панели и кадра доигрывает до конца, прежде чем тронуть ленту: тронь её
+     сразу, и сдвиг наложится на воспроизведение, картинка дёрнется. Пока идёт
+     возврат, лента стоит на паузе. */
   const т = TAKES[take];
-  if (т && т.цепочка){
-    if (!цепочкаПоднята()){ цепочкуНаЭкран(т, true); return; }
+  if (т && т.шаги){
+    if (шаг < т.шаги.length){ шаг++; применитьШаги(т); return; }
     if (опускается) return;                 // не даём нажать дважды за возврат
     опускается = true;
-    цепочкуНаЭкран(т, false);
+    шаг = 0; применитьШаги(т);              // всё снятое уходит одним движением
     setTimeout(() => {
       опускается = false;
       if (take + 1 < TAKES.length) playTake(take + 1);
@@ -1009,7 +1329,8 @@ function финалНазад(){
   $('#skip').style.display = '';
   обновитьТитр(т, film.currentTime);
   обновитьМетку(т, film.currentTime);
-  if (т.цепочка) цепочкуНаЭкран(т, true);
+  // возвращаемся на последний подшаг такта, а не на его начало
+  шаг = (т.шаги || []).length; применитьШаги(т);
   nudge.classList.add('on');
 }
 
@@ -1021,9 +1342,13 @@ function backward(){
   if (phase === 'глобус') return глобусу({ шаг:-1 });
   if (phase === 'финал1' || phase === 'финал2') return финалНазад();
   if (phase === 'done') return;
-  // поднятая панель — сначала убираем её: вперёд она тоже стоит отдельным
-  // нажатием, и шаг назад обязан разбирать показ ровно теми же ступенями
-  if (цепочкаПоднята()){ цепочкуНаЭкран(TAKES[take], false); return; }
+  /* Пройденные подшаги разбираем в обратном порядке: панель ИТ-ландшафта, блок
+     КМГИ, Атырау. Вперёд каждый из них стоит отдельным нажатием, и назад обязан
+     сниматься ровно теми же ступенями — иначе одно нажатие назад отменяет три
+     нажатия вперёд. */
+  if (TAKES[take] && TAKES[take].шаги && шаг > 0){
+    шаг--; применитьШаги(TAKES[take]); return;
+  }
 
   /* Один клик — ровно один такт назад, откуда бы ни нажали. Раньше из середины
      такта отмотка вставала в его же начало, и получалось, что «далее» и
@@ -1250,6 +1575,8 @@ slide.src = SLIDE;
 
 // служебный хук: даёт прогнать финал без ожидания ленты
 window.__demo = { finale, финалДальше, forward, backward, финалНазад, перемотатьК, playTake, TAKES,
+                  обновитьМетку, цепочкуНаЭкран, применитьШаги, hold,
+                  get шаг(){ return шаг; }, set шаг(в){ шаг = в; },
                   get фаза(){ return phase; }, get такт(){ return take; } };
 
 /* Показ не должен стартовать на недогруженной ленте: первый такт дёрнется или

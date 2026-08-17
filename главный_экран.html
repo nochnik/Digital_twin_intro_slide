@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Цифровой двойник на базе ИС «ABAI» · главный экран</title>
+<!--
+  Главный экран показа. Стоит перед 3D-макетом и закрывает разрыв, который
+  вылезал на репетиции: первые слова Председателя правления идут ещё без своей
+  картинки, а на экране в это время уже крутилась модель.
+
+  Содержание — два тезиса и кнопка, больше ничего. Оформление держит остальное:
+  сетка голограммы, световой купол, угловые засечки и въезд элементов. Без них
+  экран читался как выжимка из документа, набранная крупным кеглем.
+
+  Всё рисуется CSS: ни картинок, ни шрифтов извне — показ обязан подняться без
+  интернета.
+-->
+<style>
+  :root{
+    --cyan:#4FE3FF; --amber:#F0AE4A; --teal:#35D0C2;
+    --bg0:#050810; --bg1:#0C1626; --line:rgba(140,170,210,.22);
+    --txt:#D7E2F2; --dim:#7C8DA6;
+    --mono:Consolas,"Courier New",monospace; --serif:Cambria,Georgia,serif;
+    --ui:"Segoe UI",Calibri,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var(--txt);
+    background:var(--bg0)}
+
+  /* ── фон ───────────────────────────────────────────────────────────────
+     Кадр по теме вступительных слов, а не отвлечённая красота: ночной зрелый
+     промысел слева переходит в свою цифровую копию справа — каркасы качалок и
+     резервуаров, под поверхностью просвечивают пласты. Ровно то, о чём речь:
+     сложные запасы и переход к цифровым решениям.
+
+     Сгенерирован через Higgsfield (nano_banana_pro), без единой надписи —
+     весь текст живёт в HTML и переводится без перегенерации. Исходник 2752 px
+     лежит рядом, в показ идёт сжатая копия 1920×1072 на 313 КБ.
+
+     Поверх — затемняющая пелена: снимок сам по себе слишком «занят» под
+     набор, и без неё буллеты садились прямо на каркасы качалок.
+     ──────────────────────────────────────────────────────────────────── */
+  .фон{position:fixed;inset:0;overflow:hidden;pointer-events:none}
+
+  .кадр{position:absolute;inset:0;
+    background:url("images/фон_главный.jpg") center/cover no-repeat}
+
+  /* Пелена в две ступени: пятно под набором и общий наклон сверху вниз.
+     Значения подобраны замером яркости по композиту, а не на глаз. Первая
+     версия давила равномерно и гасила промысел с каркасами до 14 при 40 в
+     исходнике — фон превращался в текстуру, а он тут по делу. Сейчас под
+     текстом 16 (белым по нему больше 13:1), на промысле 24–32, в небе 10. */
+  .пелена{position:absolute;inset:0;
+    background:
+      radial-gradient(ellipse 50% 33% at 50% 40%,
+        rgba(5,8,16,.92) 0%, rgba(5,8,16,.68) 62%, transparent 100%),
+      linear-gradient(to bottom,
+        rgba(5,8,16,.80) 0%, rgba(5,8,16,.52) 30%,
+        rgba(5,8,16,.10) 60%, rgba(5,8,16,.26) 100%)}
+
+  .виньетка{position:absolute;inset:0;
+    background:radial-gradient(ellipse at 50% 44%, transparent 52%, rgba(5,8,16,.72) 100%)}
+
+  /* ── рамка кадра ───────────────────────────────────────────────────────
+     Угловые засечки — тот же приём, что на голограмме слоёв в макете: кадр
+     читается как визир, а не как страница.
+     ──────────────────────────────────────────────────────────────────── */
+  .визир{position:fixed;inset:30px;pointer-events:none;z-index:2}
+  .визир i{position:absolute;width:34px;height:34px;
+    border:1px solid rgba(140,170,210,.34)}
+  .визир i:nth-child(1){left:0;top:0;border-right:0;border-bottom:0}
+  .визир i:nth-child(2){right:0;top:0;border-left:0;border-bottom:0}
+  .визир i:nth-child(3){left:0;bottom:0;border-right:0;border-top:0}
+  .визир i:nth-child(4){right:0;bottom:0;border-left:0;border-top:0}
+
+  /* ── содержание ────────────────────────────────────────────────────── */
+  /* Блок уведён в верхнюю треть нижним отступом: ниже на снимке горизонт и
+     каркасы качалок, и тезисы садились прямо на них. Вверху чистое небо —
+     текст стоит на нём, промысел работает под ним. */
+  .лист{position:relative;z-index:3;height:100%;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;padding:40px 56px 240px;text-align:center}
+  @media (max-height:780px){ .лист{padding-bottom:150px} }
+
+  /* Засечка над заголовком: короткий штрих вместо надзаголовка-текста. */
+  .штрих{width:64px;height:2px;background:var(--cyan);
+    box-shadow:0 0 16px rgba(79,227,255,.7);margin-bottom:26px}
+
+  h1{font-family:var(--serif);font-size:46px;font-weight:600;line-height:1.14;
+    text-shadow:0 2px 30px rgba(5,12,24,.9)}
+  h1 b{color:var(--cyan);text-shadow:0 0 34px rgba(79,227,255,.45)}
+
+  .тезисы{margin-top:42px;display:flex;flex-direction:column;gap:20px;
+    text-align:left;max-width:880px}
+  /* Буллет — засечка слева: точка в этой типографике выглядит пылинкой. */
+  /* Тень под глифами обязательна. Замер по композиту: под третьим тезисом
+     проходит яркая линия каркаса качалки в 52 единицы, и белый по ней даёт
+     всего 4,5:1 — на проекторе это уже граница читаемости. Тень отделяет буквы
+     от чего угодно за ними, не затемняя сам снимок дальше. */
+  .т{position:relative;padding-left:32px;font-size:24px;line-height:1.42;color:#EAF2FF;
+    text-shadow:0 0 3px rgba(5,8,16,.95), 0 1px 14px rgba(5,8,16,.9)}
+  .т::before{content:'';position:absolute;left:0;top:.64em;width:15px;height:2px;
+    background:var(--cyan);box-shadow:0 0 12px rgba(79,227,255,.55)}
+  /* Цель — вывод из первой строки, поэтому янтарём и чуть светлее. */
+  .т.цель{color:#FFFFFF}
+  .т.цель::before{background:var(--amber);box-shadow:0 0 12px rgba(240,174,74,.6)}
+
+  .дальше{position:relative;margin-top:50px;display:inline-flex;align-items:center;gap:13px;
+    text-decoration:none;font-family:var(--mono);font-size:14px;letter-spacing:.18em;
+    text-transform:uppercase;color:#062028;background:var(--cyan);
+    border:1px solid var(--cyan);padding:15px 32px;font-weight:700;
+    box-shadow:0 0 0 0 rgba(79,227,255,.42);
+    transition:background .2s,box-shadow .25s,transform .2s}
+  .дальше:hover{background:#7CEBFF;box-shadow:0 0 34px rgba(79,227,255,.55);
+    transform:translateY(-1px)}
+  .дальше .arw{font-size:17px;line-height:1}
+
+  /* ── въезд ─────────────────────────────────────────────────────────────
+     Элементы выходят по очереди, снизу вверх: экран включается, а не просто
+     оказывается на проекторе.
+
+     Сделано переходами, а не анимацией с fill-mode: both. У анимации скрытое
+     стартовое состояние держится, пока она не проиграет, — а браузер её
+     приостанавливает, если вкладка не отрисовывается. Проверено: экран
+     открывался с невидимой кнопкой. У перехода конечное состояние задаёт сам
+     класс, и не отработай он вовсе — всё просто окажется на месте сразу.
+     ──────────────────────────────────────────────────────────────────── */
+  .штрих,h1,.т,.дальше{opacity:0;transform:translateY(16px);
+    transition:opacity .8s cubic-bezier(.22,.61,.36,1),
+               transform .8s cubic-bezier(.22,.61,.36,1)}
+  .штрих{transform:none;width:0;transition:opacity .6s,width .7s cubic-bezier(.22,.61,.36,1)}
+  body.вошло .штрих{opacity:1;width:64px}
+  body.вошло h1{opacity:1;transform:none;transition-delay:.12s}
+  body.вошло .т:nth-of-type(1){opacity:1;transform:none;transition-delay:.34s}
+  body.вошло .т:nth-of-type(2){opacity:1;transform:none;transition-delay:.48s}
+  body.вошло .т:nth-of-type(3){opacity:1;transform:none;transition-delay:.62s}
+  body.вошло .дальше{opacity:1;transform:none;transition-delay:.82s}
+  @media (prefers-reduced-motion:reduce){
+    .штрих,h1,.т,.дальше{transition:none}
+  }
+
+  @media (max-width:1100px){
+    h1{font-size:33px}
+    .т{font-size:19px;padding-left:26px}
+    .тезисы{margin-top:32px;gap:16px}
+    .дальше{margin-top:36px}
+    .визир{inset:18px}
+  }
+
+  /* ── водяной знак ──────────────────────────────────────────────────── */
+  #знак{position:fixed;right:26px;top:26px;z-index:60;pointer-events:none;
+    height:50px;opacity:.32;filter:drop-shadow(0 1px 3px rgba(0,0,0,.6))}
+  #знак img{display:block;height:100%;width:auto}
+</style>
+</head>
+<body>
+
+<div class="фон" aria-hidden="true">
+  <div class="кадр"></div>
+  <div class="пелена"></div>
+  <div class="виньетка"></div>
+</div>
+
+<div class="визир" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+
+<div id="знак" aria-hidden="true"><img src="лого.svg" alt=""></div>
+
+<div class="лист">
+  <div class="штрих"></div>
+
+  <h1>Цифровой двойник на базе ИС «<b>ABAI</b>»</h1>
+
+  <!-- Три тезиса по трём абзацам вступительной речи: проблема, что уже делаем,
+       цель. Средний собран из второго и третьего абзацев — формулировка моя,
+       правьте под себя, крайние два даны дословно. -->
+  <div class="тезисы">
+    <div class="т">Сложные запасы требуют качественно новых решений</div>
+    <div class="т">Несколько лет цифровизации — начали с процессов UPSTREAM</div>
+    <div class="т цель">Цель 2025–2028 — стать полностью цифровой компанией
+      и принимать решения заранее</div>
+  </div>
+
+  <a class="дальше" href="первый_слайд_v3.html">Demo ч.1<span class="arw">→</span></a>
+</div>
+
+<script>
+/* Въезд запускаем следующим кадром: класс на body переводит всё в конечное
+   состояние по переходам. Если переходы не отработают — состояние применится
+   мгновенно, и экран всё равно будет полным. */
+requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.add('вошло')));
+/* Страховка от подвисшего кадрового цикла: в фоне rAF не вызывается вовсе, и
+   без неё показ мог открыться пустым кадром. */
+setTimeout(() => document.body.classList.add('вошло'), 400);
+
+/* Вторая страховка, и она обязательна. Красивый въезд — украшение, а пустой
+   экран на показе — авария. Браузер приостанавливает и переходы тоже, если
+   кадр не отрисовывается: на проверке класс уже стоял, а непрозрачность
+   держалась на нуле. Поэтому, когда въезд по всем срокам обязан закончиться,
+   конечное состояние проставляется напрямую в стиль элемента — дальше оно ни
+   от чего не зависит. Переходы к этому моменту отыграли, скачка не видно. */
+setTimeout(() => {
+  for (const э of document.querySelectorAll('h1, .т, .дальше, .штрих')){
+    /* Переход снимаем первым делом. Без этого приостановленный переход
+       продолжает держать нарисованное значение на старте, сколько бы мы ни
+       правили стиль: проверено — style стоял «opacity: 1», а на экране был
+       ноль. Снятый переход заставляет значение примениться сразу. */
+    э.style.transition = 'none';
+    э.style.opacity = '1';
+    э.style.transform = 'none';
+  }
+  const ш = document.querySelector('.штрих');
+  if (ш) ш.style.width = '64px';
+}, 1600);
+</script>
+
+</body>
+</html>
