@@ -94,8 +94,12 @@
     color:var(--ц);text-shadow:0 0 22px rgba(0,0,0,.9)}
   .шаг .но span{font-family:var(--mono);font-size:10.5px;letter-spacing:.26em;
     text-transform:uppercase;color:var(--ц);opacity:.9;padding-top:3px}
+  /* Место под две строки держим у всех трёх заголовков. «Создание Цифрового
+     двойника месторождения» в одну не укладывается, и пояснения под колонками
+     разъезжались по высоте — сетка из трёх равных блоков рассыпалась. */
   .шаг .т{font-family:var(--serif);font-size:25px;font-weight:600;line-height:1.2;
-    margin-top:15px;color:#F2F7FF;text-shadow:0 1px 18px rgba(5,8,16,.95)}
+    margin-top:15px;min-height:2.4em;color:#F2F7FF;
+    text-shadow:0 1px 18px rgba(5,8,16,.95)}
   .шаг .п{font-size:14.5px;color:#9DB4CE;line-height:1.5;margin-top:10px;max-width:30ch;
     text-shadow:0 1px 12px rgba(5,8,16,.9)}
   /* цвет ведёт по шагам: вызов янтарём, путь цианом, цель бирюзой */
@@ -226,7 +230,7 @@
     </div>
     <div class="шаг путь">
       <div class="но"><b>03</b><span>Путь</span></div>
-      <div class="т">Цифровизация UPSTREAM</div>
+      <div class="т">Создание Цифрового двойника месторождения</div>
       <div class="п">КМГ последовательно переводит ключевые процессы в цифровой контур.</div>
     </div>
   </div>
