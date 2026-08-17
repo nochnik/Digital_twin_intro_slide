@@ -270,7 +270,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var
 </aside>
 
 <div id="road">
-  <div class="rd"><div class="y">окт 2026</div><div class="d">промышленная эксплуатация пилота</div></div>
+  <div class="rd"><div class="y">окт 2026</div><div class="d">реализация пилотного проекта</div></div>
   <div class="rsep"></div>
   <div class="rd"><div class="y">2028</div><div class="d">ТОП-12 месторождений КМГ</div></div>
   <div class="rsep"></div>
@@ -1493,8 +1493,7 @@ function showIntro(){
   // KPI масштаба программы — перенесены из презентации проекта 2026 г. (project1648547)
   $('p-fx').innerHTML =
       `<div class="fx"><div class="v">12</div><div class="l">месторождений к 2028 году</div></div>`
-    + `<div class="fx"><div class="v">90%</div><div class="l">добычи КМГ в периметре</div></div>`
-    + `<div class="fx"><div class="v">20</div><div class="l">производственных процессов</div></div>`;
+    + `<div class="fx"><div class="v">90%</div><div class="l">добычи КМГ в периметре</div></div>`;
   $('p-blocks').innerHTML = '';
   $('p-h-blocks').style.display = 'none';
   $('p-mods').innerHTML = ['ЦД пласта','ЦД скважины','ЦД добычи и наземной инфраструктуры'].map(m => `<span class="mod">${m}</span>`).join('');
@@ -1646,7 +1645,9 @@ let проходка = 1184.0, тикБурения = 0;
 // подпись бурящейся скважины ходит за её забоем
 function обновитьБурение(){
   const б = zones.skv && zones.skv.бурение;
-  const видно = б && (zones.skv.mix > 0.35);
+  // по mixH, а не по mix: подпись обязана выходить вместе с самим долотом,
+  // то есть уже на наведении, а не только после нажатия
+  const видно = б && ((zones.skv.mixH || 0) > 0.35);
   elDrill.classList.toggle('on', !!видно);
   if(!видно){ тикБурения = 0; return; }
 
@@ -1666,7 +1667,7 @@ function обновитьБурение(){
 // подпись горизонтального ствола — у носка лежачей части
 function обновитьГоризонт(){
   const г = zones.skv && zones.skv.горизонт;
-  const видно = г && (zones.skv.mix > 0.35);
+  const видно = г && ((zones.skv.mixH || 0) > 0.35);
   elГориз.classList.toggle('on', !!видно);
   if(!видно) return;
   г.якорь.getWorldPosition(_вект);
@@ -1808,6 +1809,12 @@ function animate(){
     z.mix  += (z.target  - z.mix)*k;
     z.mixH  = (z.mixH === undefined ? 0 : z.mixH) + (z.targetH - (z.mixH === undefined ? 0 : z.mixH))*k;
     const m = z.mix;
+    /* Стволы и долота живут не по оцифровке, а по наведению: `mixH` поднимается
+       и на курсоре, и на нажатии, тогда как `m` — только на нажатии. Раньше
+       наведение на слой скважины не показывало ничего, и докладчику приходилось
+       нажимать, чтобы просто указать на бурение; при этом весь слой уходил в
+       голограмму, а это отдельный шаг рассказа. */
+    const mh = z.mixH;
     // глушь < 1, пока активен акцент трубопровода: сетка уступает потоку
     const глушь = z.глушь === undefined ? 1 : z.глушь;
     for(const pm of z.physMats) pm.opacity = 1 - m*0.9;
@@ -1821,23 +1828,23 @@ function animate(){
     }
     // стволы скважин: не гаснут со слоем, а загораются фиолетовым
     if(z.wellMats) for(const wm of z.wellMats){
-      wm.opacity = m * 0.85;
-      wm.emissiveIntensity = m * (2.2 + 0.8*Math.sin(t*3.4));
+      wm.opacity = mh * 0.85;
+      wm.emissiveIntensity = mh * (2.2 + 0.8*Math.sin(t*3.4));
     }
     /* Долота на забоях: крутятся и поднимают шлам, пока слой скважины раскрыт.
        Их два — вертикальное в центре и второе на конце горизонтали. Второе
        живёт по тем же правилам, только развёрнуто по ходу ствола, и шлам у
        него уходит назад к устью, а не вверх. */
     if(z.бурение || z.бурениеГ){
-      if(z.бурМаты) for(const мат of z.бурМаты) мат.opacity = m * 0.7;   // обсадка без фиолета
+      if(z.бурМаты) for(const мат of z.бурМаты) мат.opacity = mh * 0.7;   // обсадка без фиолета
       for(const б of [z.бурение, z.бурениеГ]){
         if(!б) continue;
-        for(const мат of б.маты) мат.opacity = m;
+        for(const мат of б.маты) мат.opacity = mh;
         б.вращ.rotation.y = t * 2.6;
         const P = б.пыль, attr = P.гео.attributes.position;
         for(let i=0;i<P.n;i++) attr.setY(i, (P.seed[i] + t*7) % P.H);
         attr.needsUpdate = true;
-        P.мат.opacity = m * 0.6;
+        P.мат.opacity = mh * 0.6;
       }
     }
     // подслои пласта: свой цвет, лёгкое разделение, клипы следуют за слоем и масштабом

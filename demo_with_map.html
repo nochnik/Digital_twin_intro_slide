@@ -136,37 +136,10 @@
     line-height:1;flex:0 0 auto}
   #effects .fx .l{font-size:14px;color:#9DB4CE;line-height:1.3}
 
-  /* ── сведение контуров в общую цифру ────────────────────────────────
-     Рельс слева от списка собирает три контура в один поток и заканчивается
-     стрелкой, которая уводит его в итоговую цифру. Без этого панель читалась
-     как три несвязанных процента, и в зале оставался висеть вопрос «а сколько
-     это вместе».
-     ──────────────────────────────────────────────────────────────────── */
-  #effects .body{position:relative;padding-left:19px}
-  #effects .body::before{content:'';position:absolute;left:4px;top:10px;bottom:9px;width:2px;
-    background:linear-gradient(180deg,rgba(240,174,74,.2),rgba(53,208,194,.85))}
-  /* стрелка на конце рельса — острие смотрит в блок со сводом */
-  #effects .body::after{content:'';position:absolute;left:0;bottom:-1px;
-    border-left:5px solid transparent;border-right:5px solid transparent;
-    border-top:8px solid rgba(53,208,194,.85)}
-  #effects .ct{position:relative}
-  /* отвод от каждого контура к рельсу: видно, что в поток идёт именно он */
-  #effects .ct::before{content:'';position:absolute;left:-14px;top:15px;width:12px;height:2px;
-    background:rgba(240,174,74,.55)}
-
-  #effects .свод{margin-top:15px;border:1px solid rgba(53,208,194,.42);
-    border-left:2px solid var(--teal);padding:13px 15px 14px;
-    background:rgba(53,208,194,.055);
-    opacity:0;transform:translateY(10px);
-    transition:opacity .45s ease-out,transform .45s ease-out}
-  #effects.on .свод{opacity:1;transform:none;transition-delay:.42s}
-  #effects .свод:empty{display:none}
-  #effects .свод .п{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;
-    text-transform:uppercase;color:var(--teal);line-height:1.45}
-  #effects .свод .ц{display:flex;align-items:baseline;gap:10px;margin-top:9px}
-  #effects .свод .ц .v{font-family:var(--mono);font-size:25px;color:#F2F7FF;
-    line-height:1.05;flex:0 0 auto;font-weight:700}
-  #effects .свод .ц .l{font-size:13.5px;color:#9DB4CE;line-height:1.3}
+  /* Рельс слева от списка собирал три контура в один поток и заканчивался
+     стрелкой в блок со сводной цифрой. Свод переехал на этап тиражирования, и
+     рельс со стрелкой снят вместе с ним: вести из ниоткуда в никуда он не
+     должен. Отступ у списка тоже вернулся к нулю. */
 
   /* Дорожная карта отделена: это уже не эффект, а сроки */
   #effects .road{margin-top:16px;padding-top:16px;
@@ -247,58 +220,65 @@
     padding:6px 10px;backdrop-filter:blur(6px)}
 
   /* ── Атырау: ЦИО ──────────────────────────────────────────────────────
-     Своя точка на карте, отдельно от промысла. Собрана колонкой: метка
-     города, под ней карточка центра. Точка сидит ровно на координате, а всё
-     остальное свисает вниз-вправо — там свободное поле кадра.
+     Своя точка на карте, отдельно от промысла: метка города над кольцом,
+     кольцо ровно на координате. Сдвиг по вертикали на всю высоту минус радиус
+     — иначе на координату садится верх блока, а не сама точка.
 
-     Цвет янтарный, как у самой области: голубой в этом кадре занят промыслом,
-     и две одинаковые точки читались бы как два месторождения.
+     Цвет белый, и это перебор трёх вариантов. Янтарь совпал с контуром самой
+     области и точка в нём растворилась — область на этом кадре залита оранжевым
+     от края до края. Голубой занят промыслом: две одинаковые точки читались бы
+     как два месторождения. Фиолетовый ушёл к КМГИ. Белый на оранжевом даёт
+     максимальный контраст и честно говорит, что это город, а не актив.
      ──────────────────────────────────────────────────────────────────── */
-  /* Растёт вверх от точки: карточка, метка, кольцо. Сдвиг по вертикали на всю
-     высоту минус радиус кольца — так кольцо садится ровно на координату, а
-     содержимое уходит в свободное поле над ней. Вниз оно уезжало за край кадра
-     и попадало прямо под панель ИТ-ландшафта. */
   #cio{position:fixed;z-index:6;display:flex;flex-direction:column;
-    align-items:flex-start;gap:9px;
+    align-items:flex-start;gap:8px;
     opacity:0;pointer-events:none;transform:translate(-13px,calc(-100% + 13px));
     transition:opacity .5s, top .75s cubic-bezier(.22,.61,.36,1)}
   #cio.on{opacity:1}
   /* панель ИТ-ландшафта накрыла точку — Атырау уходит целиком */
   #cio.накрыт{opacity:0}
-  #cio .dot{width:26px;height:26px;border:2px solid var(--amber);border-radius:50%;
-    box-shadow:0 0 14px rgba(240,174,74,.7), inset 0 0 9px rgba(240,174,74,.3);
+
+  /* Текстовая часть стоит своей областью кадра — левее и выше точки, в пустой
+     середине области. Ширина тоже в долях кадра: лента тянется по окну, и в
+     пикселях блок уехал бы с карты на другом разрешении. */
+  #инфо{position:fixed;z-index:6;display:flex;flex-direction:column;gap:10px;
+    pointer-events:none}
+  #cio .dot{width:24px;height:24px;border:2px solid #FFFFFF;border-radius:50%;
+    box-shadow:0 0 16px rgba(255,255,255,.85), 0 0 4px rgba(5,8,16,.9),
+      inset 0 0 8px rgba(255,255,255,.35);
     flex:0 0 auto;animation:пульс 2.4s ease-in-out infinite}
+  /* ядро в кольце: пустой кружок на пёстрой карте читается как дырка */
+  #cio .dot::after{content:'';display:block;width:6px;height:6px;margin:7px auto 0;
+    border-radius:50%;background:#FFFFFF}
   #cio .tx{font-family:var(--mono);font-size:12px;letter-spacing:.12em;
-    text-transform:uppercase;color:#FFF3E0;white-space:nowrap;
-    background:rgba(8,14,26,.86);border-left:2px solid var(--amber);
+    text-transform:uppercase;color:#FFFFFF;white-space:nowrap;
+    background:rgba(8,14,26,.9);border-left:2px solid #FFFFFF;
     padding:6px 10px;backdrop-filter:blur(6px);margin-left:2px}
 
-  /* Карточка центра. Ширина фиксирована — длинные строки про КМГИ иначе
-     растягивают её на полкадра и накрывают контур области. */
-  #cio .карта{width:340px;max-width:34vw;margin-left:2px;
-    background:rgba(8,14,26,.88);border:1px solid rgba(140,170,210,.18);
-    border-left:2px solid var(--amber);padding:11px 13px 12px;
+  /* Карточка центра. Ширину задаёт контейнер: она в долях кадра. */
+  #инфо .карта{background:rgba(8,14,26,.88);border:1px solid rgba(140,170,210,.18);
+    border-left:2px solid var(--amber);padding:12px 14px 13px;
     backdrop-filter:blur(6px);
-    opacity:0;transform:translateY(8px);
-    transition:opacity .45s .25s,transform .45s .25s}
-  #cio.on .карта{opacity:1;transform:none}
-  #cio .карта:empty{display:none}
-  #cio .карта .ш{font-family:var(--mono);font-size:11px;letter-spacing:.14em;
+    opacity:0;transform:translateY(10px);
+    transition:opacity .45s,transform .45s}
+  #инфо .карта.on{opacity:1;transform:none}
+  #инфо .карта:empty{display:none}
+  #инфо .карта .ш{font-family:var(--mono);font-size:11px;letter-spacing:.14em;
     text-transform:uppercase;color:var(--amber);line-height:1.35}
   /* Цепь «пласт — труба — скважина» звеньями, а не строкой: так видно, что это
      последовательность объектов, а не перечисление через запятую. */
-  #cio .карта .цепь{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:9px}
-  #cio .карта .цепь span{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;
+  #инфо .карта .цепь{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:10px}
+  #инфо .карта .цепь span{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;
     text-transform:uppercase;color:#EAF2FF;border:1px solid rgba(240,174,74,.45);
     padding:3px 8px}
-  #cio .карта .цепь i{color:#5E7089;font-style:normal;font-size:11px}
-  #cio .карта .стр{font-size:12px;color:#9DB4CE;line-height:1.42;margin-top:6px;
+  #инфо .карта .цепь i{color:#5E7089;font-style:normal;font-size:11px}
+  #инфо .карта .стр{font-size:12px;color:#9DB4CE;line-height:1.42;margin-top:6px;
     padding-left:11px;position:relative}
-  #cio .карта .стр::before{content:'';position:absolute;left:0;top:7px;
+  #инфо .карта .стр::before{content:'';position:absolute;left:0;top:7px;
     width:4px;height:4px;background:rgba(140,170,210,.5)}
-  #cio .карта .стр:first-of-type{margin-top:11px;padding-top:10px;
+  #инфо .карта .стр:first-of-type{margin-top:11px;padding-top:10px;
     border-top:1px solid rgba(140,170,210,.14)}
-  #cio .карта .стр:first-of-type::before{top:17px}
+  #инфо .карта .стр:first-of-type::before{top:17px}
 
   /* ── КМГИ ─────────────────────────────────────────────────────────────
      Отдельный блок и отдельный цвет. Это не точка на карте, а операционная
@@ -307,15 +287,19 @@
      Стоит слева — там свободное поле кадра и не спорит ни с Атырау, ни с
      выноской промысла справа.
      ──────────────────────────────────────────────────────────────────── */
-  #kmgi{position:fixed;left:34px;top:19%;width:334px;max-width:30vw;z-index:6;
-    background:rgba(8,14,26,.88);border:1px solid rgba(155,123,232,.28);
-    border-left:2px solid var(--viol);padding:13px 15px 14px;
-    backdrop-filter:blur(6px);pointer-events:none;
-    opacity:0;transform:translateX(-16px);
-    transition:opacity .5s,transform .55s cubic-bezier(.22,.61,.36,1)}
+  /* КМГИ — сосед ЦИО, не его продолжение: та же область, но своя рамка и свой
+     цвет. Фиолетовый в этой палитре не занят ни промыслом, ни областью.
+     Внутри одна строка: расшифровку докладчик проговаривает вслух, а три пункта
+     под шапкой перебивали саму карточку центра. */
+  #kmgi{background:rgba(8,14,26,.88);border:1px solid rgba(155,123,232,.28);
+    border-left:2px solid var(--viol);padding:13px 15px;
+    backdrop-filter:blur(6px);
+    opacity:0;transform:translateY(10px);
+    transition:opacity .5s,transform .5s cubic-bezier(.22,.61,.36,1)}
   #kmgi.on{opacity:1;transform:none}
-  #kmgi .ш{font-family:var(--mono);font-size:11px;letter-spacing:.14em;
+  #kmgi .ш{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;
     text-transform:uppercase;color:var(--viol);line-height:1.4}
+  #kmgi .стрк:empty{display:none}
   #kmgi .стрк{margin-top:11px;padding-top:10px;
     border-top:1px solid rgba(155,123,232,.2)}
   #kmgi .стрк div{position:relative;padding-left:12px;font-size:12.5px;
@@ -434,11 +418,11 @@
   <div class="land"><div class="hd2"></div><div class="row2"></div></div>
 </div>
 <div id="mark"><span class="dot"></span><span class="ln"></span><span class="tx"></span></div>
-<!-- порядок узлов обратный: карточка, метка, точка. Точка стоит на координате,
-     всё остальное растёт от неё вверх -->
-<div id="cio"><div class="карта"></div><span class="tx"></span><span class="dot"></span></div>
-<div id="kmgi"><div class="ш"></div><div class="стрк"></div></div>
-<div id="effects"><div class="hd"></div><div class="body"></div><div class="свод"></div><div class="road"></div></div>
+<!-- Точка Атырау: метка над кольцом, кольцо сидит на координате -->
+<div id="cio"><span class="tx"></span><span class="dot"></span></div>
+<!-- Текстовая часть — своей областью кадра, левее и выше точки -->
+<div id="инфо"><div class="карта"></div><div id="kmgi"><div class="ш"></div><div class="стрк"></div></div></div>
+<div id="effects"><div class="hd"></div><div class="body"></div><div class="road"></div></div>
 <div id="справка"><div class="hd"></div><div class="nm"></div><div class="sub"></div><div class="rows"></div><div class="src"></div></div>
 <div id="go-next"><span>дальше</span><span class="a">→</span></div>
 <div id="bar"></div>
@@ -519,31 +503,35 @@ const TAKES = [
        базе ЭМГ, и ведёт цепочку моделей удалённо. Первая версия вешала карточку
        на выноску Восточного Молдабека — выходило, будто центр стоит в поле.
 
-       Доли кадра сняты по ленте: устье Урала у каспийского берега. Карточка
-       раскрывается ВВЕРХ от точки — вниз она уходила за нижний край и лезла
-       под панель ИТ-ландшафта. */
-    /* Доли пересчитаны по опорной точке кадра: выноска промысла стоит на
-       0.721 × 0.460 и на скриншоте попадает в 0.703 × 0.471, отсюда поправка
-       снимка к кадру. Русло Урала у берега приходится на 0.55 × 0.66 — туда и
-       ставим. Прежние 0.523 × 0.648 сидели выше устья и мимо реки. */
-    цио:{ x:0.550, y:0.660,
-      текст:'Атырау · ЦИО',
-      шапка:'Центр интегрированных операций развёрнут',
-      цепь:['пласт','труба','скважина'],
-      строки:[
-        'Работа с цепочкой моделей объектов реального мира',
-      ] },
+       Доли сняты с разметки на скриншоте показа. Проверка привязки: выноска
+       промысла задана на 0.721 × 0.460 и на том же снимке попадает в
+       1384 × 497 из 1920 × 1080, то есть один к одному — поправка не нужна.
+       Прежние 0.550 × 0.660 сидели ниже отметки, у самого берега. */
+    цио:{ x:0.561, y:0.579, текст:'Атырау · ЦИО' },
 
-    /* КМГИ — отдельным блоком и своим цветом. Это не про место на карте, а про
-       операционную модель института, и внутри карточки ЦИО этот смысл слипался
-       с центром в одно сообщение. Стоит слева, свободным полем кадра. */
-    кмги:{
-      шапка:'Изменения в операционной модели КМГИ',
-      строки:[
-        'Инженерный персонал перераспределяется между институтом и ДЗО',
-        'Орг. структура предприятий станет легче и управляемее',
-        'Единые методики принятия инженерных решений',
-      ] },
+    /* Вся текстовая часть — ЦИО и КМГИ — в одной области левее и выше точки
+       Атырау. Раньше ЦИО висел прямо над точкой, а КМГИ стоял отдельной панелью
+       у левого края кадра: два блока про одно решение оказывались в разных
+       углах экрана.
+
+       `y` — НИЖНЯЯ кромка области, а не верхняя, и блоки растут от неё вверх.
+       С привязкой по верху между областью и подписью Атырау зависал полуторный
+       разрыв в полтораста пикселей, и он менялся от того, сколько блоков уже
+       вышло. Снизу область всегда стоит вплотную к городу.
+
+       Доли кадра, а не пиксели: лента растягивается по окну, и в пикселях блок
+       уехал бы с карты на другом разрешении. */
+    инфо:{ x:0.412, y:0.512, w:0.212,
+      цио:{
+        шапка:'Центр интегрированных операций развёрнут',
+        цепь:['пласт','труба','скважина'],
+        строки:['Работа с цепочкой моделей объектов реального мира'],
+      },
+      /* КМГИ — одной строкой и без расшифровки: про перераспределение персонала
+         и единые методики докладчик говорит вслух, экрану достаточно самого
+         факта. Три пункта под шапкой перебивали ЦИО, хотя это его сосед, а не
+         продолжение. */
+      кмги:{ шапка:'Изменения в операционной модели КМГИ' } },
     цепочка:{
       с:9.9,                        // выходит под конец такта, когда область уже развёрнута
       шапка:'Цель 2026 — 100% цифровизация Восточного Молдабека по всей цепочке',
@@ -603,20 +591,14 @@ const TAKES = [
                         [['−5%','управляемые потери добычи'],
                          ['−3%','CAPEX/OPEX инфраструктуры']]],
       ],
-      /* Проценты по контурам сами по себе не отвечают на главный вопрос зала —
-         сколько это вместе. Сводим их в одну цифру: рельс слева собирает три
-         контура в поток, стрелка уводит его сюда. Формулировка из сценария. */
-      свод:{
-        подпись:'Ожидаемый эффект от внедрения ЦД на Молдабек В.',
-        цифры:[
-          ['2,8 млн тонн',      'по добыче'],
-          ['более 400 млрд ₸',  ''],
-        ],
-      },
+      /* Сводной цифры здесь больше нет. Дополнительная добыча и деньги — это
+         эффект программы, а не эффект контуров ЭМГ, и на этой панели они
+         забирали разговор у самих контуров. Обе цифры переехали на последний
+         этап, к ТОП-12, где под них есть карта и горизонт 2026–2030. */
       итоги:[
-        // Про тиражирование панель больше не говорит: сроки по ТОП-12 и охвату
-        // ушли на этап тиражирования, где под них есть карта.
-        ['окт. 2026', 'промышленная эксплуатация'],
+        // Про тиражирование панель не говорит: сроки по ТОП-12 и охвату ушли
+        // на этап тиражирования.
+        ['окт. 2026', 'реализация пилотного проекта'],
       ],
     },
     c:'#9B7BE8' },
@@ -659,7 +641,7 @@ const СПРАВКА = {
     ['Расчёт сценариев',       'тысячи вариантов за минуты вместо месяцев'],
     ['Выявленный потенциал',   'дополнительно 161 тыс. тонн добычи'],
     ['Оптимизация бурения',    '3 наклонно-направленные → 1 горизонтальная'],
-    ['Пром. эксплуатация ЦД',  'октябрь 2026'],
+    ['Пилотный проект',        'реализация — октябрь 2026'],
   ],
   сноска:'запасы и фонд — на 01.01.2026, НГДУ «Кайнармунайгаз»',
 };
@@ -671,7 +653,8 @@ const EPS = 0.03;                       // допуск сравнения вр�
 const $ = s => document.querySelector(s);
 const film = $('#film'), cap = $('#cap'), bar = $('#bar'),
       slide = $('#slide'), nudge = $('#go-next'), chain = $('#chain'), mark = $('#mark'), effects = $('#effects'),
-      globe = $('#globe'), справка = $('#справка'), cio = $('#cio'), kmgi = $('#kmgi');
+      globe = $('#globe'), справка = $('#справка'), cio = $('#cio'),
+      инфо = $('#инфо'), kmgi = $('#kmgi');
 
 function собратьСправку(с){
   справка.querySelector('.hd').textContent  = с.шапка;
@@ -794,26 +777,6 @@ function собратьЭффекты(э){
     тело.appendChild(к);
   });
 
-  // свод: общая цифра, в которую сходятся эффекты всех трёх контуров
-  const свод = effects.querySelector('.свод');
-  свод.textContent = '';
-  if (э.свод){
-    const п = document.createElement('div'); п.className = 'п';
-    п.textContent = э.свод.подпись;
-    свод.appendChild(п);
-    for (const [знач, подпись] of э.свод.цифры){
-      const ц = document.createElement('div'); ц.className = 'ц';
-      const v = document.createElement('span'); v.className = 'v'; v.textContent = знач;
-      ц.appendChild(v);
-      // подпись не у каждой цифры: «более 400 млрд ₸» в сценарии идёт без пояснения
-      if (подпись){
-        const l = document.createElement('span'); l.className = 'l'; l.textContent = подпись;
-        ц.appendChild(l);
-      }
-      свод.appendChild(ц);
-    }
-  }
-
   const дорога = effects.querySelector('.road');
   дорога.textContent = '';
   э.итоги.forEach(([знач, подпись], i) => {
@@ -907,8 +870,26 @@ function поставитьМетку(узел, м){
   }
 }
 
+/* Ставит текстовую область по долям кадра: левый край, ширину и НИЖНЮЮ кромку.
+   Привязка снизу принципиальна — блоки выходят по одному, и при привязке по
+   верху область росла вниз, к городу, съедая зазор и меняя его на каждом шаге.
+   Пиксели тут не годятся: лента растягивается по окну, и блок уехал бы с карты. */
+function поставитьИнфо(и){
+  const вш = innerWidth, вв = innerHeight;
+  const кадр = (film.videoWidth || 1920) / (film.videoHeight || 1080);
+  let ш, в;
+  if (вш / вв > кадр){ ш = вш; в = вш / кадр; }
+  else               { в = вв; ш = вв * кадр; }
+  const подъём = film.classList.contains('up') ? вв * 0.10 : 0;
+  const низ = (вв - в) / 2 + и.y * в - подъём;
+  инфо.style.left   = ((вш - ш) / 2 + и.x * ш) + 'px';
+  инфо.style.top    = 'auto';
+  инфо.style.bottom = (вв - низ) + 'px';
+  инфо.style.width  = (и.w * ш) + 'px';
+}
+
 function собратьКарту(к){
-  const узел = cio.querySelector('.карта');
+  const узел = инфо.querySelector('.карта');
   if (!к){ узел.textContent = ''; узел.dataset.готово = ''; return; }
   if (узел.dataset.готово === к.шапка) return;
   узел.dataset.готово = к.шапка;
@@ -956,21 +937,30 @@ let шаг = 0;
 function применитьШаги(t){
   const шаги = (t && t.шаги) || [];
   const дошли = имя => шаги.indexOf(имя) >= 0 && шаг > шаги.indexOf(имя);
+  const и = t && t.инфо;
 
-  // Атырау · ЦИО
-  if (!t || !t.цио){ cio.classList.remove('on'); собратьКарту(null); }
+  // точка Атырау
+  if (!t || !t.цио) cio.classList.remove('on');
   else {
     cio.querySelector('.tx').textContent = t.цио.текст;
-    собратьКарту(t.цио);
     поставитьМетку(cio, t.цио);
     cio.classList.toggle('on', дошли('цио'));
   }
 
-  // КМГИ
-  if (!t || !t.кмги) kmgi.classList.remove('on');
-  else {
-    собратьКМГИ(t.кмги);
-    kmgi.classList.toggle('on', дошли('кмги'));
+  // карточка ЦИО и блок КМГИ — в одной области кадра, но своими шагами
+  if (!и){
+    собратьКарту(null); kmgi.classList.remove('on');
+    инфо.querySelector('.карта').classList.remove('on');
+  } else {
+    поставитьИнфо(и);
+    собратьКарту(и.цио);
+    собратьКМГИ(и.кмги);
+    /* С выходом панели ИТ-ландшафта обе модалки уходят: про центр и институт
+       сказано, дальше идёт цель 2026 по всей цепочке. Точку Атырау это не
+       касается — город остаётся на карте, как и выноска промысла. */
+    const ушли = дошли('цепочка');
+    инфо.querySelector('.карта').classList.toggle('on', дошли('цио') && !ушли);
+    kmgi.classList.toggle('on', дошли('кмги') && !ушли);
   }
 
   // панель ИТ-ландшафта
@@ -978,12 +968,13 @@ function применитьШаги(t){
 }
 
 function собратьКМГИ(к){
-  if (kmgi.dataset.готово === к.шапка) return;
+  if (!к || kmgi.dataset.готово === к.шапка) return;
   kmgi.dataset.готово = к.шапка;
   kmgi.querySelector('.ш').textContent = к.шапка;
   const стрк = kmgi.querySelector('.стрк');
   стрк.textContent = '';
-  for (const с of к.строки){
+  // строк может не быть вовсе: у КМГИ на экране только сама шапка
+  for (const с of (к.строки || [])){
     const д = document.createElement('div'); д.textContent = с;
     стрк.appendChild(д);
   }
@@ -996,6 +987,7 @@ addEventListener('resize', () => {
     поставитьМетку(cio, t.цио);
     проверитьНакрытие(цепочкаПоднята());   // от размера окна зависит, накрыт ли Атырау
   }
+  if (t && t.инфо) поставитьИнфо(t.инфо);
 });
 
 /* ── панель цепочки ───────────────────────────────────────────────────
@@ -1065,13 +1057,11 @@ function цепочкуНаЭкран(t, показать){
   собратьЦепочку(t.цепочка);
   chain.classList.toggle('on', показать);
   film.classList.toggle('up', показать);      // кадр идёт вместе с панелью
-  /* Карточка ЦИО уходит вместе с подъёмом панели. По речи это уже следующий
-     такт — про центр и КМГИ сказано, дальше идёт цель 2026 по всей цепочке.
-     Заодно снимается наложение: на 1280×720 панель занимает 487 px, и карточка
-     оказывалась под ней. Сама выноска с названием промысла остаётся. */
-  // выноски обязаны ехать за кадром, иначе оторвутся от своих объектов
+  // выноски и текстовая область обязаны ехать за кадром, иначе оторвутся от
+  // своих объектов: кадр под панелью приподнимается
   if (t.метка) поставитьМетку(mark, t.метка);
   if (t.цио)   поставитьМетку(cio, t.цио);
+  if (t.инфо)  поставитьИнфо(t.инфо);
   // панель занимает низ экрана — подсказку «дальше» уводим над ней
   nudge.style.bottom = показать ? (chain.offsetHeight + 20) + 'px' : '';
   проверитьНакрытие(показать);
