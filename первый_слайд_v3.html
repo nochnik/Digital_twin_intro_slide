@@ -1600,26 +1600,6 @@ function showPanel(id){
 }
 $('p-close').addEventListener('click', () => { state.locked = null; state.hover = null; refresh(); });
 
-// стартовая модалка — до первого взаимодействия с моделью
-function showIntro(){
-  panelState.zone = null; panelState.sub = null;
-  $('panel').style.setProperty('--pc', '#4FE3FF');
-  $('p-kick').textContent = 'Программа «Цифровой двойник» · целевой образ';
-  $('p-name').textContent = 'Цифровой двойник месторождения на базе ИС «ABAI»';
-  $('p-claim').textContent = 'Это интеллектуальная виртуальная копия производственных обьектов реального мира.';
-  // KPI масштаба программы — перенесены из презентации проекта 2026 г. (project1648547)
-  $('p-fx').innerHTML =
-      `<div class="fx"><div class="v">12</div><div class="l">месторождений к 2028 году</div></div>`
-    + `<div class="fx"><div class="v">90%</div><div class="l">добычи КМГ в периметре</div></div>`;
-  $('p-blocks').innerHTML = '';
-  $('p-h-blocks').style.display = 'none';
-  $('p-mods').innerHTML = ['ЦД пласта','ЦД скважины','ЦД добычи и наземной инфраструктуры'].map(m => `<span class="mod">${m}</span>`).join('');
-  // Сноска про ЦД ресурсной базы снята: по сценарию демонстрации двойник
-  // месторождения состоит из трёх контуров, ГРР в периметр показа не входит.
-  $('p-note').textContent = '';
-  $('panel').classList.add('vis');
-}
-
 const chip = $('chip');
 function refresh(){
   const a = active();
@@ -1639,7 +1619,11 @@ function refresh(){
       sb.classList.toggle('hot', a === id && cur === si);
     });
   }
-  if(a) showPanel(a); else showIntro();
+  /* Ничего не выбрано — панели нет вовсе. Стартовая модалка про ABAI снята:
+     она открывалась поверх модели до первого касания и закрывала собой то,
+     ради чего слайд и открыт. Её содержание переехало на главный экран
+     показа, где под него есть отдельный кадр. */
+  if(a) showPanel(a); else $('panel').classList.remove('vis');
   controls.autoRotateSpeed = ROT_SPEED;
   updateNavLine();
   // список меняет высоту и заново центрируется — уточняем позицию, когда раскладка устоялась
@@ -1671,7 +1655,6 @@ function updateNavLine(){
   dot.classList.add('on');
   btns.forEach(b => b.classList.toggle('done', centerOf(b) <= y + 1));
 }
-showIntro();
 fitBetweenPanels();
 
 /* ================================================================

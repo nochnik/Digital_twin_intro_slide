@@ -102,6 +102,20 @@
     text-shadow:0 1px 18px rgba(5,8,16,.95)}
   .шаг .п{font-size:14.5px;color:#9DB4CE;line-height:1.5;margin-top:10px;max-width:30ch;
     text-shadow:0 1px 12px rgba(5,8,16,.9)}
+  /* Масштаб программы — при третьем шаге, а не отдельным блоком: шаг говорит
+     про путь, цифры говорят, куда этот путь ведёт, и врозь они теряют смысл.
+     Выходят вместе со своей колонкой, отдельного нажатия им не нужно.
+
+     Приехали с обзорной панели 3D-макета: там они жили в модалке, которая
+     открывалась поверх модели до первого касания и закрывала собой ровно то,
+     ради чего слайд открывают. Модалка снята, цифрам нашлось место здесь. */
+  .шаг .цифры{display:flex;gap:26px;margin-top:20px;padding-top:16px;
+    border-top:1px solid rgba(140,170,210,.18)}
+  .шаг .цифра .в{font-family:var(--mono);font-size:27px;font-weight:700;line-height:1;
+    color:var(--ц);text-shadow:0 0 22px rgba(0,0,0,.9)}
+  .шаг .цифра .л{font-size:12.5px;color:#9DB4CE;line-height:1.35;margin-top:7px;
+    max-width:15ch;text-shadow:0 1px 12px rgba(5,8,16,.9)}
+
   /* цвет ведёт по шагам: вызов янтарём, путь цианом, цель бирюзой */
   .шаг.вызов{--ц:var(--amber)}
   .шаг.путь {--ц:var(--cyan)}
@@ -182,12 +196,17 @@
     .шаг{padding:0 28px}
     .шаг .т{font-size:21px}
     .шаг .п{font-size:13.5px}
+    .шаг .цифры{gap:18px;margin-top:16px;padding-top:12px}
+    .шаг .цифра .в{font-size:23px}
     .цепь b,.цепь i{font-size:17px}
   }
   @media (max-height:800px){
     .лист{padding-top:32px}
     h1{font-size:30px;margin-top:16px}
     .шаги{margin-top:30px}
+    .шаг .цифры{margin-top:14px;padding-top:11px}
+    .шаг .цифра .в{font-size:22px}
+    .шаг .цифра .л{font-size:11.5px;margin-top:5px}
     .низ{padding-bottom:24px}
     .цепь{padding:14px 22px}
     .подвал{margin-top:16px}
@@ -232,6 +251,10 @@
       <div class="но"><b>03</b><span>Путь</span></div>
       <div class="т">Создание Цифрового двойника месторождения</div>
       <div class="п">КМГ последовательно переводит ключевые процессы в цифровой контур.</div>
+      <div class="цифры">
+        <div class="цифра"><div class="в">12</div><div class="л">месторождений к 2028 году</div></div>
+        <div class="цифра"><div class="в">90%</div><div class="л">добычи КМГ в периметре</div></div>
+      </div>
     </div>
   </div>
 
@@ -285,6 +308,17 @@ function показать(){
   шаги.forEach((э, i) => э.classList.toggle('вышел', i < шаг));
   цепь.classList.toggle('вышла', шаг >= ВСЕГО);
   подсказка.classList.add('on');
+}
+
+/* Служебный вход по адресу: `?шаг=N` открывает экран сразу после N нажатий.
+   Нужен для снимков — страницу открывает Chrome в фоновом режиме, нажимать там
+   некому. На показ не влияет: без параметра всё как было. */
+{
+  const п = new URLSearchParams(location.search).get('шаг') ?? new URLSearchParams(location.search).get('step');
+  if (п !== null){
+    шаг = Math.max(0, Math.min(ВСЕГО, +п || 0));
+    setTimeout(показать, 250);
+  }
 }
 
 function вперёд(){
